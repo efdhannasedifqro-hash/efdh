@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Panel Administrativo - SEDIF EFDH</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root { --primary: #7b7bb5; --secondary: #00ad9f; --danger: #e74c3c; --bg: #f0f2f5; --text: #2c3e50; --purple: #8e44ad; --man: #3498db; --woman: #e84393; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; color: var(--text); overflow: hidden; }
+        
+        /* --- LOGIN --- */
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--primary); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+        .login-card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); width: 90%; max-width: 350px; text-align: center; }
+         
+        /* --- LAYOUT --- */
+        #admin-panel { display: none; min-height: 100vh; width: 100%; display: flex; }
+        .sidebar { width: 260px; background: white; height: 100vh; padding: 30px 20px; position: fixed; border-right: 1px solid #e1e8f0; display: flex; flex-direction: column; box-sizing: border-box; z-index: 100; overflow-y: auto; }
+        .main-content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; overflow-y: auto; height: 100vh; -webkit-overflow-scrolling: touch; }
+        
+        /* --- COMPONENTES --- */
+        .user-box { padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid #eee; }
+        .nav-btn { padding: 12px 15px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: 0.3s; font-weight: 500; color: #555; display: flex; align-items: center; gap: 10px; }
+        .nav-btn.active { background: var(--primary); color: white; }
+        .nav-btn.active-asis { background: var(--secondary); color: white; }
+        
+        /* Burbuja del contador */
+        .count-badge { background: var(--danger); color: white; font-size: 0.75em; padding: 2px 8px; border-radius: 10px; font-weight: bold; margin-left: auto; }
+
+        .table-card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-top: 20px; width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th { background: #fafbfc; color: #8898aa; font-size: 0.75em; text-transform: uppercase; padding: 15px 20px; text-align: left; }
+        td { padding: 15px 20px; border-bottom: 1px solid #f0f2f5; font-size: 0.9em; }
+
+        input, select, button { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        .btn-primary { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; padding: 15px; }
+        .btn-danger { background: var(--danger); color: white; border: none; font-weight: bold; cursor: pointer; padding: 15px; margin-top: 10px; }
+        .btn-save { background: var(--secondary); color: white; border: none; font-weight: bold; cursor: pointer; padding: 15px; margin-top: 20px; font-size: 1.1em; width: 100%; position: sticky; bottom: 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+        .btn-action { background: var(--primary); color: white; border: none; padding: 8px 12px; font-size: 0.8em; border-radius: 6px; cursor: pointer; width: auto; margin-top: 0; white-space: nowrap; }
+
+        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.75em; font-weight: bold; white-space: nowrap; }
+        .val-si { background: #e6fcf5; color: #0ca678; }
+        .val-no { background: #fff5f5; color: #fa5252; }
+        .check-asis { transform: scale(1.8); cursor: pointer; height: 20px; width: 20px; margin: 0 auto; display: block; }
+
+        /* BUSCADOR DE CÓDIGOS */
+        .search-box-container { margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        .result-code-box { margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 5px solid var(--primary); display: none; }
+
+        /* ESTADÍSTICAS */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid var(--primary); }
+        .stat-card h3 { margin: 0; color: var(--primary); font-size: 2rem; }
+        .stat-card p { margin: 5px 0 0; color: #666; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; }
+
+        /* MODALES */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 20000; justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 12px; width: 95%; max-width: 700px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+        .modal-header { background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { margin: 0; font-size: 1.2rem; }
+        .close-modal { font-size: 24px; cursor: pointer; color: white; }
+        .modal-body { padding: 25px; overflow-y: auto; flex-grow: 1; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .data-item { background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
+        .data-item label { font-size: 0.75em; color: #888; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 4px; }
+        .data-item span { font-size: 0.95em; color: #333; font-weight: 500; }
+        .full-width { grid-column: span 2; }
+        .highlight { background: #e6fcf5; border-color: #0ca678; }
+        .modal-footer { padding: 20px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 10px; flex-direction: column; }
+
+        @media (max-width: 768px) { body { overflow: auto; } #admin-panel { flex-direction: column; } .sidebar { position: relative; width: 100%; height: auto; padding: 20px; } .main-content { margin-left: 0; width: 100%; } }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <h2>Acceso EFDH</h2>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">Use su cuenta institucional</p>
+            
+            <div id="g_id_onload"
+                 data-client_id="1002166167341-diguctcp78ppfvup8i8kof4l9herp18h.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="manejarRespuestaGoogle"
+                 data-auto_prompt="false">
+            </div>
+            
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+            
+            <p id="login-msg" style="font-size:0.85em; color:var(--primary); margin-top:15px;"></p>
+        </div>
+    </div>
+
+    <div id="admin-panel">
+        <div class="sidebar">
+            <div class="user-box">
+                <h3 id="user-display" style="margin: 0 0 5px 0;">Usuario</h3>
+                <small id="role-display" style="color:gray;">Rol</small>
+            </div>
+            <div id="menu-admin-only">
+                <div id="tab-nuevas" class="nav-btn active" onclick="cambiarSeccion('nuevas')">
+                    📩 Solicitudes <span id="badge-nuevas" class="count-badge" style="display:none;">0</span>
+                </div>
+                <div id="tab-activos" class="nav-btn" onclick="cambiarSeccion('activos')">👥 Alumnos Activos</div>
+                <div id="tab-terminados" class="nav-btn" onclick="cambiarSeccion('terminados')">🎓 Terminados</div>
+                <div id="tab-rechazados" class="nav-btn" onclick="cambiarSeccion('rechazados')">🚫 Rechazados</div>
+                <div id="tab-verificador" class="nav-btn" onclick="cambiarSeccion('verificador')" style="background:#eef2ff;">🔍 Validar Códigos</div>
+                <div id="tab-catalogos" class="nav-btn" onclick="cambiarSeccion('catalogos')">🏫 Talleres</div>
+                <div id="tab-stats" class="nav-btn" onclick="cambiarSeccion('stats')" style="color: var(--secondary); font-weight: bold;">📈 Estadísticas</div>
+                <div id="tab-buscar" class="nav-btn" onclick="cambiarSeccion('buscar')" style="color: #2980b9; font-weight: bold;">🔎 Buscar Registro</div>
+            </div>
+            <div id="tab-asistencias" class="nav-btn" onclick="cambiarSeccion('asistencias')">📝 Pase de Lista</div>
+            
+            <div id="tab-acerca" class="nav-btn" onclick="mostrarAcercaDe()" style="margin-top:auto; margin-bottom: 5px; color: #7f8c8d;">ℹ️ Acerca del Sistema</div>
+            <div class="nav-btn" onclick="location.reload()" style="color:#e74c3c;">🚪 Salir</div>
+        </div>
+
+        <div class="main-content">
+            <div id="sec-nuevas" class="content-section">
+                <h1>📩 Solicitudes Pendientes</h1>
+                <div class="table-card">
+                    <table><thead><tr><th>Folio</th><th>Nombre</th><th>Taller</th><th>Acción</th></tr></thead><tbody id="body-nuevas"></tbody></table>
+                </div>
+            </div>
+
+            <div id="sec-activos" class="content-section" style="display:none;">
+                <h1>👥 Alumnos en Curso</h1>
+                <div class="table-card">
+                    <table><thead><tr><th>Folio</th><th>Nombre</th><th>Taller</th><th>Asistencias</th><th>Estatus</th></tr></thead><tbody id="body-activos"></tbody></table>
+                </div>
+            </div>
+
+            <div id="sec-terminados" class="content-section" style="display:none;">
+                <h1>🎓 Histórico de Terminados</h1>
+                <div class="table-card">
+                    <table><thead><tr><th>Folio</th><th>Nombre</th><th>Taller</th><th>Finalización</th><th>Evaluación</th></tr></thead><tbody id="body-terminados"></tbody></table>
+                </div>
+            </div>
+
+            <div id="sec-rechazados" class="content-section" style="display:none;">
+                <h1>🚫 Solicitudes Rechazadas</h1>
+                <div class="table-card">
+                    <table><thead><tr><th>Folio</th><th>Nombre</th><th>Taller</th><th>Motivo</th></tr></thead><tbody id="body-rechazados"></tbody></table>
+                </div>
+            </div>
+
+            <div id="sec-verificador" class="content-section" style="display:none;">
+                <h1>🔍 Verificador de Constancias</h1>
+                <p>Ingrese el Folio de Inscripción para recuperar los códigos únicos de validación.</p>
+                <div class="search-box-container" style="max-width: 500px;">
+                    <input type="text" id="input-search-folio" placeholder="Ej: EFDH-2026-001" style="text-transform: uppercase;">
+                    <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="buscarCodigos()">BUSCAR CÓDIGOS</button>
+                    <div id="search-result" class="result-code-box"></div>
+                </div>
+            </div>
+
+            <div id="sec-buscar" class="content-section" style="display:none;">
+                <h1>🔎 Búsqueda de Expediente Completo</h1>
+                <p>Ingrese el CURP o el Nombre del beneficiario para ver su historial en la Escuela.</p>
+                <div class="search-box-container" style="max-width: 700px;">
+                    <input type="text" id="input-buscar-registro" placeholder="Ingrese CURP o Nombre completo..." style="text-transform: uppercase;">
+                    <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="buscarHistorialCompleto()">BUSCAR EXPEDIENTE</button>
+                    <div id="resultado-historial" style="margin-top:20px;"></div>
+                </div>
+            </div>
+
+            <div id="sec-catalogos" class="content-section" style="display:none;">
+                <h1>🏫 Gestión de Talleres</h1>
+                <div class="table-card">
+                    <table><thead><tr><th>ID</th><th>Taller</th><th>Impartido Por</th><th>Estatus</th><th>Acción</th></tr></thead><tbody id="body-catalogos"></tbody></table>
+                </div>
+            </div>
+
+            <div id="sec-asistencias" class="content-section" style="display:none;">
+                <h1>📝 Pase de Lista</h1>
+                <div style="background:white; padding:15px; border-radius:12px; border-left: 5px solid var(--secondary); margin-bottom: 20px;">
+                    <label style="font-weight:bold; display:block; margin-bottom:5px;">Seleccionar Taller:</label>
+                    <select id="asis-taller-filtro" onchange="cargarAlumnosAsistencia()"></select>
+                </div>
+                <div class="table-card">
+                    <table><thead><tr><th>Beneficiario</th><th style="text-align:center;">Ses.</th><th style="text-align:center;">Asistencia</th></tr></thead><tbody id="body-asistencias"></tbody></table>
+                </div>
+                <button id="btn-guardar-lista" class="btn-save" onclick="guardarAsistenciasMasivas()" style="display:none;">💾 GUARDAR ASISTENCIAS</button>
+            </div>
+
+            <div id="sec-stats" class="content-section" style="display:none;">
+                <h1>📈 Inteligencia de Datos</h1>
+                
+                <div style="background:white; padding:20px; border-radius:12px; border-left: 5px solid var(--primary); margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <div style="flex-grow: 1;">
+                        <label style="font-weight:bold; color:var(--primary); display:block; margin-bottom:5px;">📅 Seleccionar Mes de Reporte:</label>
+                        <select id="filtro-mes-stats" onchange="procesarEstadisticasMensuales()" style="margin-top:0;">
+                            <option value="GLOBAL">-- TODO EL HISTÓRICO --</option>
+                        </select>
+                    </div>
+                    <div id="resumen-mes-badge" style="background: var(--bg); padding: 10px 20px; border-radius: 8px; font-weight: bold; color: var(--primary); display:none;">
+                        Mostrando: <span id="label-mes-activo">Global</span>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card"><h3 id="stat-total">0</h3><p>Inscritos</p></div>
+                    <div class="stat-card"><h3 id="stat-pend">0</h3><p>Pendientes</p></div>
+                    <div class="stat-card"><h3 id="stat-cursando">0</h3><p>Cursando</p></div>
+                    <div class="stat-card"><h3 id="stat-term">0</h3><p>Terminados</p></div>
+                    <div class="stat-card" style="border-bottom-color: var(--danger);"><h3 id="stat-rech" style="color:var(--danger)">0</h3><p>Rechazados</p></div>
+                    <div class="stat-card" style="border-bottom-color: var(--man);"><h3 id="stat-hombres" style="color:var(--man)">0</h3><p>Hombres</p></div>
+                    <div class="stat-card" style="border-bottom-color: var(--woman);"><h3 id="stat-mujeres" style="color:var(--woman)">0</h3><p>Mujeres</p></div>
+                    <div class="stat-card" style="border-bottom-color: var(--purple);"><h3 id="stat-inst" style="color:var(--purple)">0</h3><p>Instituciones</p></div>
+                </div>
+                
+                <div class="table-card" style="padding:20px; margin-bottom: 20px;">
+                    <canvas id="canvasStats" style="max-height: 280px;"></canvas>
+                </div>
+
+                <div class="table-card">
+                    <h2 style="padding: 20px 20px 0; margin:0;">Desglose Detallado por Taller <span id="titulo-tabla-mes" style="font-size: 0.6em; color: gray;">(Global)</span></h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Taller</th>
+                                <th style="text-align:center;">Inscritos<br><small style="color:gray; font-weight:normal;">(Hombres | Mujeres)</small></th>
+                                <th style="text-align:center;">Cursando<br><small style="color:gray; font-weight:normal;">(Hombres | Mujeres)</small></th>
+                                <th style="text-align:center;">Terminados<br><small style="color:gray; font-weight:normal;">(Hombres | Mujeres)</small></th>
+                                <th style="text-align:center;">% Éxito</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-stats-taller"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-detalle" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="modal-titulo">Expediente</h2><span class="close-modal" onclick="cerrarModal()">&times;</span></div>
+            <div class="modal-body" id="modal-contenido"></div>
+            <div class="modal-footer" id="modal-footer"></div>
+        </div>
+    </div>
+
+    <div id="acerca-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px; text-align: center;">
+            <div class="modal-header" style="background: #2c3e50;">
+                <h2 style="margin: 0; font-size: 1.2rem;">Acerca del Sistema</h2>
+                <span class="close-modal" onclick="cerrarAcerca()">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 30px; line-height: 1.6;">
+                <h1 style="color: var(--primary); margin-top: 0; margin-bottom: 5px;">EFDH - SEDIF</h1>
+                <p style="font-size: 1.1em; font-weight: bold; color: #555; margin-top: 0;">Sistema de Gestión Integral</p>
+                
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                
+                <div style="font-size: 0.95em; color: #666; text-align: left; padding-left: 10px;">
+                    <p><b>Versión:</b> 1.6 (Build Normativo - 2026)</p>
+                    <p><b>Arquitectura:</b> Ecosistema Serverless y PWA</p>
+                    <p><b>Cumplimiento Normativo:</b> Arts. 17, 32, 34 y 50 (SSTI-SF)</p>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 25px; border-left: 4px solid var(--secondary); text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <p style="margin: 0 0 8px 0; color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;"><strong>Diseño y Desarrollo Autoral:</strong></p>
+                    <p style="margin: 0; font-weight: bold; color: #2c3e50; font-size: 1.1em;">Mtro. César Gabriel Terrazas Zarazúa</p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #555;">Lic. en Sistemas Computacionales</p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #777; font-style: italic;">Jefe del Departamento de Tecnologías de la Información y Comunicación del SEDIF QUERÉTARO.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycby3HeIk2O6LsVlyYpHX1q5MckNU9_FYfqKKtShmSqUJ1Qpl5pKTAvCZ6vMqy0cY7IQ/exec';
+        let inscritosGlobal = [];
+        let usuarioLogueado = {};
+        let miGrafica = null;
+
+        function decodificarJWT(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        async function manejarRespuestaGoogle(respuesta) {
+            document.getElementById('login-msg').innerText = "Verificando en base de datos...";
+            const datosGoogle = decodificarJWT(respuesta.credential);
+            const emailVerificado = datosGoogle.email;
+            const infoEquipo = navigator.userAgent;
+
+            try {
+                const res = await fetch(URL_APPS_SCRIPT, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ 
+                        accion: 'login_seguro', 
+                        correo: emailVerificado, 
+                        equipo: infoEquipo 
+                    }) 
+                });
+                
+                const user = await res.json();
+                
+                if (user.autorizado) {
+                    usuarioLogueado = user;
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('admin-panel').style.display = 'flex';
+                    document.getElementById('user-display').innerText = user.nombre;
+                    document.getElementById('role-display').innerText = user.rol;
+                    
+                    if(user.rol === 'Tallerista') { 
+                        document.getElementById('menu-admin-only').style.display = 'none'; 
+                        cambiarSeccion('asistencias'); 
+                    } else { 
+                        cambiarSeccion('nuevas'); 
+                        setInterval(cargarDatos, 30000);
+                    }
+                } else { 
+                    alert("Tu correo validado (" + emailVerificado + ") no está dado de alta en la base de datos de usuarios del sistema.");
+                    document.getElementById('login-msg').innerText = "";
+                }
+            } catch (e) { 
+                alert("Error de conexión al servidor."); 
+                document.getElementById('login-msg').innerText = "";
+            }
+        }
+
+        function cambiarSeccion(sec) {
+            ['nuevas', 'activos', 'terminados', 'rechazados', 'verificador', 'buscar', 'catalogos', 'asistencias', 'stats'].forEach(s => {
+                const el = document.getElementById('sec-' + s);
+                if(el) el.style.display = s === sec ? 'block' : 'none';
+            });
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active', 'active-asis'));
+            const tab = document.getElementById('tab-' + sec);
+            if(tab) tab.classList.add(sec === 'asistencias' ? 'active-asis' : 'active');
+            cargarDatos();
+            if(sec === 'asistencias') cargarCatalogosFiltro();
+        }
+
+        async function cargarDatos() {
+            const res = await fetch(`${URL_APPS_SCRIPT}?accion=admin_listar_inscritos&nocache=${new Date().getTime()}`);
+            inscritosGlobal = await res.json();
+            renderizarTablas();
+        }
+
+        function procesarFechaFuerte(fechaStr) {
+            if (!fechaStr) return null;
+            const soloFecha = fechaStr.split(' ')[0]; 
+
+            if (soloFecha.includes('/') || soloFecha.includes('-')) {
+                const separador = soloFecha.includes('/') ? '/' : '-';
+                const partes = soloFecha.split(separador);
+                
+                if (partes.length === 3) {
+                    let dia = partes[0];
+                    let mes = partes[1];
+                    let anio = partes[2];
+                    if (anio.length === 2) anio = "20" + anio;
+                    return `${anio}-${("0" + mes).slice(-2)}`;
+                }
+            }
+            return null;
+        }
+
+        function renderizarTablas() {
+            const selectorMes = document.getElementById('filtro-mes-stats');
+            if (selectorMes && selectorMes.options.length === 1) {
+                
+                const mesesDisponibles = [...new Set(inscritosGlobal.map(al => procesarFechaFuerte(al.fecha_registro)))].filter(m => m).sort().reverse();
+
+                const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                
+                mesesDisponibles.forEach(m => {
+                    const [year, month] = m.split("-");
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = `${nombresMeses[parseInt(month) - 1]} ${year}`;
+                    selectorMes.appendChild(opt);
+                });
+            }
+            procesarEstadisticasMensuales();
+        }
+
+        function procesarEstadisticasMensuales() {
+            const mesSeleccionado = document.getElementById('filtro-mes-stats').value;
+            const labelMes = document.getElementById('label-mes-activo');
+            const badgeMes = document.getElementById('resumen-mes-badge');
+            const tituloTabla = document.getElementById('titulo-tabla-mes');
+
+            let dataTotal = 0, dataPend = 0, dataCurs = 0, dataTerm = 0, dataRech = 0;
+            let setPersonasActivas = [];
+
+            if (mesSeleccionado === "GLOBAL") {
+                badgeMes.style.display = "none";
+                tituloTabla.innerText = "(Histórico Global)";
+                
+                const nuevas = inscritosGlobal.filter(al => !al.validado || al.validado === "");
+                const activos = inscritosGlobal.filter(al => al.validado === "Sí" && parseInt(al.asistencias || 0) < 8);
+                const terminados = inscritosGlobal.filter(al => parseInt(al.asistencias || 0) >= 8); 
+                const rechazados = inscritosGlobal.filter(al => (al.validado || "").includes("No") || (al.validado || "").includes("Rechazado"));
+
+                dataTotal = inscritosGlobal.length;
+                dataPend = nuevas.length;
+                dataCurs = activos.length;
+                dataTerm = terminados.filter(g => g.estatus === "Evaluación Recibida").length;
+                dataRech = rechazados.length;
+                setPersonasActivas = inscritosGlobal; 
+
+            } else {
+                labelMes.innerText = document.getElementById('filtro-mes-stats').selectedOptions[0].text;
+                badgeMes.style.display = "block";
+                tituloTabla.innerText = `(Actividad en: ${document.getElementById('filtro-mes-stats').selectedOptions[0].text})`;
+
+                inscritosGlobal.forEach(al => {
+                    const mesReg = procesarFechaFuerte(al.fecha_registro);
+                    const mesTerm = procesarFechaFuerte(al.encuesta_fecha);
+                    let tomoClase = false;
+                    
+                    if (al.fechas_asis && al.fechas_asis.length > 0) {
+                        tomoClase = al.fechas_asis.some(f => procesarFechaFuerte(f) === mesSeleccionado);
+                    } else if (mesReg === mesSeleccionado && al.validado === "Sí" && parseInt(al.asistencias||0) < 8) {
+                        tomoClase = true; 
+                    }
+
+                    let tuvoActividad = false;
+
+                    if (mesReg === mesSeleccionado) {
+                        dataTotal++;
+                        tuvoActividad = true;
+                        if (!al.validado || al.validado === "") dataPend++;
+                        if ((al.validado || "").includes("No") || (al.validado || "").includes("Rechazado")) dataRech++;
+                    }
+
+                    if (mesTerm === mesSeleccionado) {
+                        dataTerm++;
+                        tuvoActividad = true;
+                    }
+
+                    if (tomoClase) {
+                        dataCurs++;
+                        tuvoActividad = true;
+                    }
+
+                    if (tuvoActividad) {
+                        if (!setPersonasActivas.find(p => p.folio === al.folio)) {
+                            setPersonasActivas.push(al);
+                        }
+                    }
+                });
+            }
+
+            document.getElementById('stat-total').innerText = dataTotal;
+            document.getElementById('stat-pend').innerText = dataPend;
+            document.getElementById('stat-cursando').innerText = dataCurs;
+            document.getElementById('stat-term').innerText = dataTerm;
+            document.getElementById('stat-rech').innerText = dataRech;
+            document.getElementById('stat-hombres').innerText = setPersonasActivas.filter(al => al.sexo === 'H').length;
+            document.getElementById('stat-mujeres').innerText = setPersonasActivas.filter(al => al.sexo === 'M').length;
+
+            dibujarGrafica(dataPend, dataCurs, dataTerm, dataRech);
+            
+            const talleresUnicos = [...new Set(setPersonasActivas.map(al => al.taller))];
+            
+            document.getElementById('body-stats-taller').innerHTML = talleresUnicos.map(t => {
+                
+                let inscritosObj = [];
+                let cursandoObj = [];
+                let terminadosObj = [];
+
+                if (mesSeleccionado === "GLOBAL") {
+                    inscritosObj = inscritosGlobal.filter(al => al.taller === t);
+                    cursandoObj = inscritosObj.filter(al => al.validado === "Sí" && parseInt(al.asistencias || 0) < 8);
+                    terminadosObj = inscritosObj.filter(al => parseInt(al.asistencias || 0) >= 8 && al.estatus === "Evaluación Recibida");
+                } else {
+                    inscritosObj = inscritosGlobal.filter(al => al.taller === t && procesarFechaFuerte(al.fecha_registro) === mesSeleccionado);
+                    terminadosObj = inscritosGlobal.filter(al => al.taller === t && procesarFechaFuerte(al.encuesta_fecha) === mesSeleccionado);
+                    
+                    cursandoObj = inscritosGlobal.filter(al => {
+                        if (al.taller !== t) return false;
+                        let tomoClase = false;
+                        if (al.fechas_asis && al.fechas_asis.length > 0) {
+                            tomoClase = al.fechas_asis.some(f => procesarFechaFuerte(f) === mesSeleccionado);
+                        } else if (procesarFechaFuerte(al.fecha_registro) === mesSeleccionado && al.validado === "Sí" && parseInt(al.asistencias||0) < 8) {
+                            tomoClase = true; 
+                        }
+                        return tomoClase;
+                    });
+                }
+
+                const hInscritos = inscritosObj.filter(al => al.sexo === 'H').length;
+                const mInscritos = inscritosObj.filter(al => al.sexo === 'M').length;
+
+                const hCursando = cursandoObj.filter(al => al.sexo === 'H').length;
+                const mCursando = cursandoObj.filter(al => al.sexo === 'M').length;
+
+                const hTerminados = terminadosObj.filter(al => al.sexo === 'H').length;
+                const mTerminados = terminadosObj.filter(al => al.sexo === 'M').length;
+
+                const tInscritos = inscritosObj.length;
+                const tCursando = cursandoObj.length;
+                const tTerminados = terminadosObj.length;
+
+                const porc = tInscritos > 0 ? Math.round((tTerminados / tInscritos) * 100) : (tTerminados > 0 ? 100 : 0);
+                
+                return `<tr>
+                    <td>${t}</td>
+                    <td style="text-align:center">
+                        <span style="font-size:1.1em; font-weight:bold;">${tInscritos}</span><br>
+                        <small><span style="color:var(--man); font-weight:bold;">${hInscritos}H</span> | <span style="color:var(--woman); font-weight:bold;">${mInscritos}M</span></small>
+                    </td>
+                    <td style="text-align:center">
+                        <span style="font-size:1.1em; font-weight:bold;">${tCursando}</span><br>
+                        <small><span style="color:var(--man); font-weight:bold;">${hCursando}H</span> | <span style="color:var(--woman); font-weight:bold;">${mCursando}M</span></small>
+                    </td>
+                    <td style="text-align:center">
+                        <span style="font-size:1.1em; font-weight:bold;">${tTerminados}</span><br>
+                        <small><span style="color:var(--man); font-weight:bold;">${hTerminados}H</span> | <span style="color:var(--woman); font-weight:bold;">${mTerminados}M</span></small>
+                    </td>
+                    <td style="text-align:center"><b>${porc}%</b></td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="5" style="text-align:center">Sin actividad en este periodo</td></tr>';
+
+            const talleresActivos = inscritosGlobal.filter(t => t.estatus !== 'INACTIVO');
+            const institucionesUnicas = new Set();
+            talleresActivos.forEach(t => { if (t.impartido_por) institucionesUnicas.add(t.impartido_por.trim()); });
+            const elStat = document.getElementById('stat-inst');
+            if (elStat) elStat.innerText = institucionesUnicas.size;
+
+            renderizarTablasGestionAdmin(); 
+        }
+
+        function renderizarTablasGestionAdmin() {
+            const nuevas = inscritosGlobal.filter(al => !al.validado || al.validado === "");
+            const activos = inscritosGlobal.filter(al => al.validado === "Sí" && parseInt(al.asistencias || 0) < 8);
+            const terminados = inscritosGlobal.filter(al => parseInt(al.asistencias || 0) >= 8); 
+            const rechazados = inscritosGlobal.filter(al => (al.validado || "").includes("No") || (al.validado || "").includes("Rechazado"));
+
+            const badge = document.getElementById('badge-nuevas');
+            if (badge) {
+                if (nuevas.length > 0) { badge.innerText = nuevas.length; badge.style.display = 'inline-block'; }
+                else { badge.style.display = 'none'; }
+            }
+            
+            document.getElementById('body-nuevas').innerHTML = nuevas.map(al => `<tr><td><b>${al.folio}</b></td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'validar')">Gestionar</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">Sin pendientes</td></tr>';
+            document.getElementById('body-activos').innerHTML = activos.map(al => `<tr><td>${al.folio}</td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><b>${al.asistencias || 0} / 8</b></td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'activo')">Ver Detalle</button></td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center">No hay alumnos activos</td></tr>';
+
+            document.getElementById('body-terminados').innerHTML = terminados.map(al => {
+                const esGraduado = (al.estatus === "Evaluación Recibida");
+                return `<tr><td>${al.folio}</td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><span class="status-pill ${esGraduado ? 'pill-active' : 'val-no'}">${esGraduado ? "✅ Finalizado" : "⏳ Pendiente Encuesta"}</span></td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'terminado')">Ver Evaluación</button></td></tr>`
+            }).join('') || '<tr><td colspan="5" style="text-align:center">Sin terminados</td></tr>';
+
+            document.getElementById('body-rechazados').innerHTML = rechazados.map(al => `
+                <tr>
+                    <td><b>${al.folio}</b></td>
+                    <td>${al.nombres} ${al.paterno}</td>
+                    <td>${al.taller}</td>
+                    <td style="color:var(--danger);">
+                        <small><b>${al.motivo || "Sin motivo especificado"}</b></small>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" style="text-align:center">No hay registros rechazados</td></tr>';
+
+            if(usuarioLogueado.rol === 'Administrador') obtenerDatosCatalogos();
+        }
+
+        function dibujarGrafica(p, c, g, r) {
+            const ctx = document.getElementById('canvasStats').getContext('2d');
+            if(miGrafica) miGrafica.destroy();
+            miGrafica = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pendientes', 'Cursando', 'Terminados', 'Rechazados'],
+                    datasets: [{ data: [p, c, g, r], backgroundColor: ['#7b7bb5', '#00ad9f', '#2c3e50', '#e74c3c'], borderRadius: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function buscarHistorialCompleto() {
+            const term = document.getElementById('input-buscar-registro').value.trim().toUpperCase();
+            const resBox = document.getElementById('resultado-historial');
+            if(!term) return;
+
+            const encontrados = inscritosGlobal.filter(al => 
+                (al.curp && al.curp.toUpperCase() === term) || 
+                `${al.nombres} ${al.paterno} ${al.materno}`.toUpperCase().includes(term)
+            );
+
+            if(encontrados.length === 0) {
+                resBox.innerHTML = `
+                    <div style="background:#fff5f5; padding:20px; border-radius:8px; border-left:5px solid var(--danger);">
+                        <h4 style="color:var(--danger); margin:0;">⚠️ Sin resultados</h4>
+                        <p style="margin-top:5px; margin-bottom:0;">CURP o nombre no registrado en este sistema.</p>
+                    </div>`;
+                return;
+            }
+
+            let html = `<h3 style="color:var(--primary);">Registros encontrados (${encontrados.length})</h3>`;
+            
+            encontrados.forEach(al => {
+                let estadoBadge = "";
+                let colorBg = "#fff";
+                let borderColor = "#ddd";
+                let infoExtra = "";
+
+                if (al.validado === "No" || al.validado === "Rechazado") {
+                    estadoBadge = "🚫 RECHAZADO";
+                    colorBg = "#fff5f5"; borderColor = "var(--danger)";
+                    infoExtra = `<p><b>Motivo del rechazo:</b> <span style="color:var(--danger);">${al.motivo || "No especificado"}</span></p>`;
+                } else if (!al.validado || al.validado === "") {
+                    estadoBadge = "📩 PENDIENTE DE VALIDAR";
+                    colorBg = "#f8f9fa";
+                } else if (parseInt(al.asistencias || 0) >= 8) {
+                    estadoBadge = "🎓 TERMINADO";
+                    colorBg = "#e6fcf5"; borderColor = "var(--secondary)";
+                    infoExtra = `<p><b>Constancia Final Emitida:</b> ${al.encuesta_fecha ? "Sí, evaluación contestada" : "En espera de evaluación"}</p>`;
+                } else {
+                    estadoBadge = "⏳ ACTIVO (EN CURSO)";
+                    colorBg = "#eef2ff"; borderColor = "var(--primary)";
+                    let fechas = al.fechas_asis && al.fechas_asis.length > 0 ? al.fechas_asis.join(", ") : "Aún no tiene asistencias";
+                    infoExtra = `
+                        <p><b>Asistencias acumuladas:</b> ${al.asistencias || 0} / 8</p>
+                        <p><b>Fechas en las que asistió:</b> ${fechas}</p>
+                    `;
+                }
+
+                html += `
+                <div style="background:${colorBg}; border:1px solid ${borderColor}; padding:20px; border-radius:10px; margin-bottom:15px; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom:10px;">
+                        <span style="font-weight:bold; color:var(--text); font-size:1.1em;">${al.nombres} ${al.paterno} ${al.materno}</span>
+                        <span style="font-weight:bold; color:${borderColor};">${estadoBadge}</span>
+                    </div>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.9em; margin-bottom:10px;">
+                        <div><b>Folio:</b> ${al.folio}</div>
+                        <div><b>CURP:</b> ${al.curp || "N/A"}</div>
+                        <div style="grid-column: span 2;"><b>Taller:</b> ${al.taller}</div>
+                    </div>
+
+                    <div style="background:#f0f4ff; padding:10px; border-radius:6px; font-size:0.85em; display:grid; grid-template-columns: 1fr 1fr; gap:5px; border:1px solid #d1d9e6;">
+                        <div style="grid-column: span 2; border-bottom:1px solid #d1d9e6; margin-bottom:5px; font-weight:bold; color:var(--primary);">DATOS DE CONTACTO Y ORIGEN:</div>
+                        <div><b>📧 Correo:</b> ${al.correo}</div>
+                        <div><b>📱 Teléfono:</b> ${al.telefono}</div>
+                        <div><b>⚖️ Canaliza:</b> ${al.canaliza}</div>
+                        <div><b>📂 Expediente:</b> ${al.expediente} (Juzgado ${al.juzgado})</div>
+                    </div>
+
+                    <div style="margin-top:10px; background:white; padding:10px; border-radius:6px; border:1px solid #eee; font-size:0.85em;">
+                        ${infoExtra}
+                    </div>
+                </div>`;
+            });
+
+            resBox.innerHTML = html;
+        }
+
+        function buscarCodigos() {
+            const folio = document.getElementById('input-search-folio').value.trim().toUpperCase();
+            const resBox = document.getElementById('search-result');
+            const al = inscritosGlobal.find(a => a.folio === folio);
+            
+            resBox.style.display = 'block';
+            if(!al) { resBox.innerHTML = "<p style='color:red;'>⚠️ El folio no existe en la base de datos.</p>"; return; }
+            
+            const hIns = al.folio_val_ins || "Pendiente";
+            const hFin = al.folio_val_fin || "No generado aún";
+            
+            resBox.innerHTML = `
+                <h4>Resultados para: ${folio}</h4>
+                <p><b>Alumno:</b> ${al.nombres} ${al.paterno}</p>
+                <hr>
+                <p><b>🔑 Cód. Inscripción:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${hIns}</code></p>
+                <p><b>🎓 Cód. Finalización:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${hFin}</code></p>
+                <p><small>*Si el código final no aparece, el alumno aún no se gradúa o el sistema no ha emitido la constancia.</small></p>
+            `;
+        }
+
+        function abrirExpediente(folio, tipo) {
+            const al = inscritosGlobal.find(a => a.folio === folio);
+            if (!al) return;
+
+            document.getElementById('modal-titulo').innerText = tipo === 'validar' ? "Validar Solicitud" : "Expediente del Beneficiario";
+            
+            const textoSede = al.lugar ? al.lugar : '<span style="color:#e67e22; font-weight:bold;">⏳ Calculando asignación...</span>';
+            const textoHorario = al.dia ? `${al.dia} - ${al.horario}` : '<span style="color:#e67e22;">⏳ Procesando...</span>';
+
+            let contenido = `
+                <div class="data-grid">
+                    <div class="data-item highlight"><label>Folio</label><span>${al.folio}</span></div>
+                    <div class="data-item"><label>Estatus</label><span>${al.estatus || 'PENDIENTE'}</span></div>
+                    <div class="data-item full-width"><label>Nombre Completo</label><span>${al.nombres} ${al.paterno} ${al.materno}</span></div>
+                    
+                    <div class="data-item"><label>Correo Electrónico</label><span>${al.correo}</span></div>
+                    <div class="data-item"><label>Teléfono</label><span>${al.telefono}</span></div>
+                    
+                    <div class="data-item"><label>Canalizado por</label><span>${al.canaliza}</span></div>
+                    <div class="data-item"><label>Expediente / Juzgado</label><span>${al.expediente} (Juzgado ${al.juzgado})</span></div>
+
+                    <div class="data-item full-width"><label>Taller</label><span>${al.taller}</span></div>
+                    <div class="data-item"><label>Sede</label><span>${textoSede}</span></div>
+                    <div class="data-item"><label>Horario</label><span>${textoHorario}</span></div>
+            `;
+            if((tipo === 'terminado' || tipo === 'graduado') && al.encuesta_fecha) {
+                contenido += `<div class="data-item full-width highlight">Resultados de Evaluación Respondida: ${al.encuesta_fecha}</div>`;
+            }
+            contenido += `</div>`;
+            document.getElementById('modal-contenido').innerHTML = contenido;
+
+            let botonesFooter = '';
+
+            if(tipo === 'validar') {
+                if (!al.lugar || al.lugar.trim() === "") {
+                    botonesFooter = `
+                        <div style="background: #fff4e6; border-left: 4px solid #e67e22; padding: 10px; margin-bottom: 10px; font-size: 0.85em; color: #d35400;">
+                            <b>El sistema maestro está asignando la Sede y Horario en la nube.</b><br>Por favor, cierre esta ventana y espere unos segundos para poder aprobar.
+                        </div>
+                        <button class="btn-danger" onclick="procesarValidacion('${al.folio}', 'No')">🚫 RECHAZAR SOLICITUD</button>
+                        <button class="btn-primary" onclick="cerrarModal()">CERRAR Y ESPERAR</button>
+                    `;
+                } else {
+                    botonesFooter = `
+                        <button class="btn-primary" onclick="procesarValidacion('${al.folio}', 'Sí')">✅ APROBAR</button>
+                        <button class="btn-danger" onclick="procesarValidacion('${al.folio}', 'No')">🚫 RECHAZAR</button>
+                    `;
+                }
+            } else {
+                if (tipo === 'terminado' || tipo === 'graduado') {
+                    botonesFooter += `
+                        <button class="btn-action" style="background:#27ae60; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="reenviarFinal('${al.folio}')">
+                            🎓 REENVIAR DIPLOMA FINAL
+                        </button>
+                    `;
+                } 
+                else if (al.validado === 'Sí') {
+                    botonesFooter += `
+                        <button class="btn-action" style="background:#f39c12; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="reenviarInscripcion('${al.folio}')">
+                            📄 REENVIAR CONSTANCIA INSCRIPCIÓN
+                        </button>
+                    `;
+                }
+                botonesFooter += `<button class="btn-primary" onclick="cerrarModal()">CERRAR</button>`;
+            }
+
+            document.getElementById('modal-footer').innerHTML = botonesFooter;
+            document.getElementById('modal-detalle').style.display = 'flex';
+        }
+
+        async function procesarValidacion(folio, decision) {
+            let motivoRechazo = "";
+            if (decision === 'No') {
+                motivoRechazo = prompt("⚠️ Por favor, ingresa el motivo del rechazo:");
+                if (motivoRechazo === null) return; 
+                if (motivoRechazo.trim() === "") return alert("Debes escribir un motivo.");
+                decision = "Rechazado"; 
+            } else {
+                if(!confirm(`¿Confirmar aprobación del folio ${folio}?`)) return;
+            }
+
+            const fila = inscritosGlobal.findIndex(a => a.folio === folio) + 2;
+            
+            await fetch(URL_APPS_SCRIPT, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ 
+                    metodo: 'validar_inscrito', 
+                    fila: fila, 
+                    decision: decision,
+                    motivo: motivoRechazo
+                }) 
+            });
+            
+            cerrarModal();
+            cargarDatos();
+        }
+
+        async function reenviarInscripcion(folio) {
+            if(!confirm(`¿Reenviar CONSTANCIA DE INSCRIPCIÓN al folio ${folio}?`)) return;
+            procesarReenvio(folio, 'reenviar_inscripcion');
+        }
+
+        async function reenviarFinal(folio) {
+            if(!confirm(`¿Reenviar DIPLOMA FINAL al folio ${folio}?`)) return;
+            procesarReenvio(folio, 'reenviar_final');
+        }
+
+        async function procesarReenvio(folio, metodo) {
+            const btn = document.querySelector('#modal-footer button[style*="background"]'); 
+            if(btn) { btn.innerText = "Procesando..."; btn.disabled = true; }
+
+            const fila = inscritosGlobal.findIndex(a => a.folio === folio) + 2;
+
+            try {
+                await fetch(URL_APPS_SCRIPT, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ metodo: metodo, fila: fila }) 
+                });
+                
+                alert("✅ Solicitud enviada. El Monitor procesará el correo en breve.");
+                cerrarModal();
+                cargarDatos();
+            } catch (e) {
+                alert("Error de conexión");
+                if(btn) btn.disabled = false;
+            }
+        }
+
+        async function cargarCatalogosFiltro() {
+            const res = await fetch(`${URL_APPS_SCRIPT}?accion=listar_talleres`);
+            const talleres = await res.json();
+            const select = document.getElementById('asis-taller-filtro');
+            if(usuarioLogueado.rol === 'Administrador') {
+                select.innerHTML = '<option value="">-- Seleccionar Taller --</option>' + talleres.map(t => `<option value="${t.nombre}">${t.nombre}</option>`).join('');
+                select.disabled = false;
+            } else {
+                const miT = talleres.find(t => t.id == usuarioLogueado.taller_id);
+                const n = miT ? miT.nombre : "Sin taller";
+                select.innerHTML = `<option value="${n}">${n}</option>`; select.disabled = true;
+                cargarAlumnosAsistencia();
+            }
+        }
+
+        async function cargarAlumnosAsistencia() {
+            const taller = document.getElementById('asis-taller-filtro').value;
+            const tbody = document.getElementById('body-asistencias');
+            if(!taller) return;
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Actualizando...</td></tr>';
+            const res = await fetch(`${URL_APPS_SCRIPT}?accion=admin_listar_inscritos&nocache=${new Date().getTime()}`);
+            inscritosGlobal = await res.json();
+            const activos = inscritosGlobal.filter(al => al.taller === taller && al.validado === "Sí" && parseInt(al.asistencias || 0) < 8);
+            
+            tbody.innerHTML = activos.map(al => `
+                <tr>
+                    <td><b>${al.nombres} ${al.paterno} ${al.materno}</b><br><small>${al.folio}</small></td>
+                    <td style="text-align:center;">${al.asistencias}/8</td>
+                    <td style="text-align:center;"><input type="checkbox" class="check-asis" data-folio="${al.folio}"></td>
+                </tr>
+            `).join('') || '<tr><td colspan="3">Sin alumnos</td></tr>';
+            
+            document.getElementById('btn-guardar-lista').style.display = activos.length ? 'block' : 'none';
+        }
+
+        async function guardarAsistenciasMasivas() {
+            const checks = document.querySelectorAll('.check-asis:checked');
+            if(!checks.length) return alert("Selecciona beneficiarios");
+            const btn = document.getElementById('btn-guardar-lista');
+            btn.innerText = "Guardando..."; btn.disabled = true;
+            const lista = Array.from(checks).map(c => ({ folio: c.dataset.folio }));
+            try {
+                await fetch(URL_APPS_SCRIPT, { method: 'POST', body: JSON.stringify({ asistencias: lista }) });
+                alert("Asistencias guardadas");
+                setTimeout(() => { cargarAlumnosAsistencia(); btn.innerText = "💾 GUARDAR ASISTENCIAS"; btn.disabled = false; }, 2000);
+            } catch(e) { alert("Error"); btn.disabled = false; }
+        }
+
+        async function obtenerDatosCatalogos() {
+            const res = await fetch(`${URL_APPS_SCRIPT}?accion=listar_talleres&t=${new Date().getTime()}`);
+            const data = await res.json();
+            
+            document.getElementById('body-catalogos').innerHTML = data.map((item, idx) => `<tr><td><b>${item.id}</b></td><td>${item.nombre}</td><td>${item.impartido_por || '-'}</td><td><span class="status-pill ${item.estatus === 'ACTIVO' ? 'val-si' : 'val-no'}">${item.estatus}</span></td><td><button class="btn-action" onclick="alternarTaller('${item.estatus}', ${idx + 2})">Alternar</button></td></tr>`).join('');
+
+            const talleresActivos = data.filter(t => t.estatus === 'ACTIVO');
+            const institucionesUnicas = new Set();
+            
+            talleresActivos.forEach(t => {
+                if (t.impartido_por && t.impartido_por.trim() !== "") {
+                    institucionesUnicas.add(t.impartido_por.trim());
+                }
+            });
+
+            const elStat = document.getElementById('stat-inst');
+            if (elStat) elStat.innerText = institucionesUnicas.size;
+        }
+
+        async function alternarTaller(estatusActual, filaExcel) {
+            const nuevoEstatus = (estatusActual === 'ACTIVO') ? 'INACTIVO' : 'ACTIVO';
+            
+            if(!confirm(`¿Deseas cambiar el estatus del taller a ${nuevoEstatus}?`)) return;
+
+            try {
+                await fetch(URL_APPS_SCRIPT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        accion_admin: 'actualizar',
+                        fila: filaExcel,
+                        estatus: nuevoEstatus
+                    })
+                });
+                
+                obtenerDatosCatalogos();
+            } catch(e) {
+                alert("Hubo un error al intentar actualizar el taller.");
+            }
+        }
+
+        function cerrarModal() { document.getElementById('modal-detalle').style.display = 'none'; }
+        function mostrarAcercaDe() { document.getElementById('acerca-modal').style.display = 'flex'; }
+        function cerrarAcerca() { document.getElementById('acerca-modal').style.display = 'none'; }
+    </script>
+</body>
+</html>

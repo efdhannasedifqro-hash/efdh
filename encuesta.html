@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Satisfacción - EFDH</title>
+    <style>
+        :root { --primary: #7b7bb5; --secondary: #00ad9f; --bg: #f4f7f6; --text: #2c3e50; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.6; }
+        
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
+        .header h1 { color: var(--primary); margin: 0 0 10px 0; font-size: 1.5rem; }
+        .header p { color: #666; font-size: 0.9rem; margin: 0; }
+
+        .form-group { margin-bottom: 25px; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #eee; transition: 0.3s; }
+        .form-group:hover { border-color: var(--primary); box-shadow: 0 5px 15px rgba(123, 123, 181, 0.1); }
+        
+        label { display: block; font-weight: 600; margin-bottom: 12px; color: var(--text); font-size: 1.05rem; }
+        
+        /* Estilos para opciones SI/NO y Escalas */
+        .options-container { display: flex; gap: 10px; flex-wrap: wrap; }
+        
+        .radio-btn { display: none; } /* Ocultar radio real */
+        
+        .option-label {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            min-width: 80px;
+        }
+
+        /* Cuando está seleccionado */
+        .radio-btn:checked + .option-label {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+            font-weight: bold;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 173, 159, 0.3);
+        }
+
+        .taller-info { background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #444; border-left: 5px solid var(--primary); }
+        .taller-info strong { display: block; color: var(--primary); margin-bottom: 5px; }
+
+        .btn-submit { display: block; width: 100%; background: var(--primary); color: white; padding: 16px; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 30px; }
+        .btn-submit:hover { background: #5a5a90; transform: translateY(-2px); }
+        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-container">
+        <div class="header">
+            <h1>Evaluación de Satisfacción</h1>
+            <p>Escuela de Formación y Desarrollo Humano</p>
+        </div>
+
+        <div class="taller-info">
+            <small>Usted cursó el taller:</small>
+            <strong id="display-taller">Cargando taller...</strong>
+            <small style="margin-top:5px; display:block;">Folio: <span id="display-folio">...</span></small>
+        </div>
+
+        <form id="surveyForm" onsubmit="enviarEncuesta(event)">
+            
+            <div class="form-group">
+                <label>⏱️ 2. ¿La duración de las sesiones fue completa?</label>
+                <div class="options-container">
+                    <input type="radio" name="q2" id="q2_si" value="SÍ" class="radio-btn" required><label for="q2_si" class="option-label">👍 SÍ</label>
+                    <input type="radio" name="q2" id="q2_no" value="NO" class="radio-btn"><label for="q2_no" class="option-label">👎 NO</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>👨‍🏫 3. El desempeño del/la tallerista fue:</label>
+                <div class="options-container">
+                    <input type="radio" name="q3" id="q3_exc" value="EXCELENTE" class="radio-btn" required><label for="q3_exc" class="option-label">🤩 Excelente</label>
+                    <input type="radio" name="q3" id="q3_bien" value="BIEN" class="radio-btn"><label for="q3_bien" class="option-label">🙂 Bien</label>
+                    <input type="radio" name="q3" id="q3_reg" value="REGULAR" class="radio-btn"><label for="q3_reg" class="option-label">😐 Regular</label>
+                    <input type="radio" name="q3" id="q3_def" value="DEFICIENTE" class="radio-btn"><label for="q3_def" class="option-label">😕 Deficiente</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🧩 4. ¿Se utilizaron estrategias para fortalecer el aprendizaje (videos, dinámicas, etc.)?</label>
+                <div class="options-container">
+                    <input type="radio" name="q4" id="q4_si" value="SÍ" class="radio-btn" required><label for="q4_si" class="option-label">SÍ</label>
+                    <input type="radio" name="q4" id="q4_no" value="NO" class="radio-btn"><label for="q4_no" class="option-label">NO</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>📚 5. El contenido y aprendizaje del taller fue:</label>
+                <div class="options-container">
+                    <input type="radio" name="q5" id="q5_exc" value="EXCELENTE" class="radio-btn" required><label for="q5_exc" class="option-label">🤩 Excelente</label>
+                    <input type="radio" name="q5" id="q5_bien" value="BIEN" class="radio-btn"><label for="q5_bien" class="option-label">🙂 Bien</label>
+                    <input type="radio" name="q5" id="q5_reg" value="REGULAR" class="radio-btn"><label for="q5_reg" class="option-label">😐 Regular</label>
+                    <input type="radio" name="q5" id="q5_def" value="DEFICIENTE" class="radio-btn"><label for="q5_def" class="option-label">😕 Deficiente</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🙋 6. ¿Está interesado en tomar otro taller de forma voluntaria?</label>
+                <div class="options-container">
+                    <input type="radio" name="q6" id="q6_si" value="SÍ" class="radio-btn" required><label for="q6_si" class="option-label">SÍ</label>
+                    <input type="radio" name="q6" id="q6_no" value="NO" class="radio-btn"><label for="q6_no" class="option-label">NO</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>📢 7. ¿Recomendaría estos talleres a otras personas?</label>
+                <div class="options-container">
+                    <input type="radio" name="q7" id="q7_si" value="SÍ" class="radio-btn" required><label for="q7_si" class="option-label">SÍ</label>
+                    <input type="radio" name="q7" id="q7_no" value="NO" class="radio-btn"><label for="q7_no" class="option-label">NO</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🤝 8. Su compromiso en participación y aprovechamiento fue:</label>
+                <div class="options-container">
+                    <input type="radio" name="q8" id="q8_exc" value="EXCELENTE" class="radio-btn" required><label for="q8_exc" class="option-label">Excelente</label>
+                    <input type="radio" name="q8" id="q8_bien" value="BIEN" class="radio-btn"><label for="q8_bien" class="option-label">Bien</label>
+                    <input type="radio" name="q8" id="q8_reg" value="REGULAR" class="radio-btn"><label for="q8_reg" class="option-label">Regular</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>⏰ 9. Su compromiso en puntualidad y asistencia fue:</label>
+                <div class="options-container">
+                    <input type="radio" name="q9" id="q9_exc" value="EXCELENTE" class="radio-btn" required><label for="q9_exc" class="option-label">Excelente</label>
+                    <input type="radio" name="q9" id="q9_bien" value="BIEN" class="radio-btn"><label for="q9_bien" class="option-label">Bien</label>
+                    <input type="radio" name="q9" id="q9_reg" value="REGULAR" class="radio-btn"><label for="q9_reg" class="option-label">Regular</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🏠 10. ¿Aplica lo aprendido en su vida diaria?</label>
+                <div class="options-container">
+                    <input type="radio" name="q10" id="q10_si" value="SÍ" class="radio-btn" required><label for="q10_si" class="option-label">SÍ</label>
+                    <input type="radio" name="q10" id="q10_no" value="NO" class="radio-btn"><label for="q10_no" class="option-label">NO</label>
+                </div>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="btn-submit">ENVIAR EVALUACIÓN</button>
+        </form>
+    </div>
+
+    <div id="success-screen" class="container hidden" style="text-align:center;">
+        <h1 style="color:var(--secondary); font-size:3rem;">✅</h1>
+        <h2 style="color:var(--primary);">¡Gracias por sus respuestas!</h2>
+        <p>Sus datos han sido guardados.</p>
+        <p><strong>En unos momentos recibirá su Constancia de Finalización en su correo electrónico.</strong></p>
+        <p style="font-size:0.8rem; color:#999;">Puede cerrar esta ventana.</p>
+    </div>
+
+    <script>
+        // URL DE TU WEB APP PUENTE (La misma que usas en el admin.html)
+        const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycby3HeIk2O6LsVlyYpHX1q5MckNU9_FYfqKKtShmSqUJ1Qpl5pKTAvCZ6vMqy0cY7IQ/exec';
+
+        // 1. Obtener parámetros de la URL al cargar
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const folio = urlParams.get('folio');
+            const taller = urlParams.get('taller');
+
+            if(folio && taller) {
+                document.getElementById('display-folio').innerText = folio;
+                document.getElementById('display-taller').innerText = taller;
+            } else {
+                document.body.innerHTML = "<h3 style='text-align:center; margin-top:50px;'>Enlace incompleto. Por favor utilice el enlace que recibió en su correo.</h3>";
+            }
+        };
+
+        // 2. Enviar formulario
+        async function enviarEncuesta(e) {
+            e.preventDefault(); // 1. Evitamos que la página se recargue inmediatamente
+
+            const btn = document.getElementById('btnSubmit');
+            btn.innerText = "ENVIANDO...";
+            btn.disabled = true;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // 2. Construimos el objeto de respuestas
+            const formData = {
+                action: 'save_survey', 
+                folio: urlParams.get('folio'),
+                taller: urlParams.get('taller'),
+                respuestas: [
+                    urlParams.get('taller'), // Col AD
+                    getVal('q2'),            // Col AE
+                    getVal('q3'),            // Col AF
+                    getVal('q4'),            // Col AG
+                    getVal('q5'),            // Col AH
+                    getVal('q6'),            // Col AI
+                    getVal('q7'),            // Col AJ
+                    getVal('q8'),            // Col AK
+                    getVal('q9'),            // Col AL
+                    getVal('q10')            // Col AM
+                ]
+            };
+
+            try {
+                // 3. Realizamos el envío al servidor
+                const res = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'cors', 
+                    redirect: 'follow', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(formData)
+                });
+                
+                // 4. Esperamos la respuesta del servidor
+                const response = await res.json();
+
+                // 5. Actuamos según lo que diga el servidor
+                if (response.status === 'success') {
+                    // Éxito: Mostramos pantalla de agradecimiento
+                    document.getElementById('main-container').classList.add('hidden');
+                    document.getElementById('success-screen').classList.remove('hidden');
+                } else {
+                    // Error: El servidor rechazó el envío (ej: ya respondió)
+                    alert("Atención: " + response.message);
+                    btn.disabled = false;
+                    btn.innerText = "ENVIAR EVALUACIÓN";
+                }
+            } catch (err) {
+                // Error de red o conexión
+                console.error(err);
+                alert("Hubo un error de conexión con el servidor.");
+                btn.disabled = false;
+                btn.innerText = "ENVIAR EVALUACIÓN";
+            }
+        }
+
+        function getVal(name) {
+            const el = document.querySelector(`input[name="${name}"]:checked`);
+            return el ? el.value : '';
+        }
+    </script>
+</body>
+</html>

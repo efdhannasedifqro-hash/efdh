@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Asistencia en Tiempo Real</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(rgb(202, 180, 106), rgb(117, 173, 211));
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 1000px;
+            margin: auto;
+        }
+        .filter-section {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            margin-bottom: 25px;
+        }
+        .th-asistencia {
+            background-color: #198754 !important;
+            color: white !important;
+            text-align: center;
+            width: 140px;
+        }
+        .checkbox-cell {
+            text-align: center;
+            vertical-align: middle;
+        }
+        #statusGuardado {
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="text-center mb-4">
+        <h1 class="display-6 fw-bold text-dark"><i class="bi bi-cloud-check-fill"></i> Control de Asistencia</h1>
+        <div id="statusGuardado" class="badge bg-secondary p-2 mt-2">Listo para registrar</div>
+    </div>
+
+    <div class="filter-section shadow-sm">
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">1. Seleccionar Sede</label>
+                <select id="selectSede" class="form-select form-select-lg" onchange="actualizarAulasPorSede()">
+                    <option value="">Cargando Sedes...</option>
+                </select>
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label fw-bold">2. Seleccionar Aula</label>
+                <div class="input-group input-group-lg">
+                    <select id="selectAula" class="form-select" onchange="filtrarTablaFinal()" disabled>
+                        <option value="">Elija una sede primero...</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="agregarAulaManual()" title="Agregar Aula Manual">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <label class="form-label fw-bold">Buscar por Nombre</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscador" class="form-control" placeholder="Buscar en la lista filtrada..." onkeyup="filtrarTablaFinal()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive bg-white rounded shadow-sm">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-3">Nombre del Beneficiario</th>
+                    <th>Taller</th>
+                    <th class="th-asistencia">
+                        Asistencia <br>
+                        <input class="form-check-input" type="checkbox" id="selectAll">
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="tablaCuerpo">
+                <tr>
+                    <td colspan="3" class="text-center py-5 text-muted">
+                        <i class="bi bi-info-circle"></i> Seleccione Sede y Aula para listar beneficiarios
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // URL de tu implementación de Google Apps Script
+    const APP_SCRIPT_URL = "TU_URL_DE_APPS_SCRIPT_AQUI"; 
+    let datosCompletos = [];
+
+    // --- CARGA INICIAL ---
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch(APP_SCRIPT_URL)
+            .then(res => res.json())
+            .then(data => {
+                datosCompletos = data;
+                poblarSedes();
+            })
+            .catch(err => {
+                console.error("Error:", err);
+                document.getElementById('statusGuardado').innerText = "Error de conexión";
+                document.getElementById('statusGuardado').className = "badge bg-danger";
+            });
+    });
+
+    // --- LÓGICA DE FILTROS VINCULADOS ---
+    function poblarSedes() {
+        const select = document.getElementById('selectSede');
+        const sedesUnicas = [...new Set(datosCompletos.map(item => item.Sede))];
+        
+        select.innerHTML = '<option value="">-- Seleccione Sede --</option>';
+        sedesUnicas.forEach(sede => {
+            const opt = document.createElement('option');
+            opt.value = sede; opt.text = sede; select.add(opt);
+        });
+    }
+
+    function actualizarAulasPorSede() {
+        const sedeElegida = document.getElementById('selectSede').value;
+        const selectAula = document.getElementById('selectAula');
+        
+        if (!sedeElegida) {
+            selectAula.innerHTML = '<option value="">Elija una sede primero...</option>';
+            selectAula.disabled = true;
+            return;
+        }
+
+        const aulasDeSede = [...new Set(
+            datosCompletos.filter(item => item.Sede === sedeElegida).map(item => item.Aula)
+        )];
+
+        selectAula.innerHTML = '<option value="">-- Seleccione Aula --</option>';
+        aulasDeSede.forEach(aula => {
+            if(aula) {
+                const opt = document.createElement('option');
+                opt.value = aula; opt.text = aula; selectAula.add(opt);
+            }
+        });
+
+        // Cargar aulas manuales del LocalStorage para esta sede
+        let manuales = JSON.parse(localStorage.getItem('aulas_pers')) || [];
+        manuales.filter(r => r.sede === sedeElegida).forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.aula; opt.text = r.aula + " (M)"; selectAula.add(opt);
+        });
+
+        selectAula.disabled = false;
+        filtrarTablaFinal();
+    }
+
+    function filtrarTablaFinal() {
+        const sede = document.getElementById('selectSede').value;
+        const aula = document.getElementById('selectAula').value;
+        const nombre = document.getElementById('buscador').value.toLowerCase();
+
+        const filtrados = datosCompletos.filter(item => {
+            const matchSede = item.Sede === sede;
+            const matchAula = !aula || item.Aula === aula;
+            const matchNombre = item.Nombre.toLowerCase().includes(nombre);
+            return matchSede && matchAula && matchNombre;
+        });
+
+        renderizarTabla(filtrados);
+    }
+
+    function renderizarTabla(lista) {
+        const tbody = document.getElementById('tablaCuerpo');
+        tbody.innerHTML = lista.length === 0 ? '<tr><td colspan="3" class="text-center py-4">Sin resultados</td></tr>' : "";
+
+        lista.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="ps-3 fw-medium">${item.Nombre}</td>
+                <td class="text-muted">${item.Taller}</td>
+                <td class="checkbox-cell">
+                    <input class="form-check-input asis-check" type="checkbox" 
+                           data-nombre="${item.Nombre}" data-sede="${item.Sede}" data-aula="${item.Aula}"
+                           onchange="registrarAsistencia(this)" style="transform: scale(1.3);">
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        document.getElementById('selectAll').checked = false;
+    }
+
+    // --- AUTOGUARDADO EN TIEMPO REAL ---
+    function registrarAsistencia(checkbox) {
+        const status = document.getElementById('statusGuardado');
+        status.innerText = "Guardando en Excel...";
+        status.className = "badge bg-warning text-dark";
+
+        const payload = {
+            nombre: checkbox.dataset.nombre,
+            sede: checkbox.dataset.sede,
+            aula: checkbox.dataset.aula,
+            estado: checkbox.checked ? "PRESENTE" : "AUSENTE",
+            fecha: new Date().toLocaleString()
+        };
+
+        fetch(APP_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            cache: 'no-cache',
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            status.innerText = "✓ Sincronizado";
+            status.className = "badge bg-success";
+            setTimeout(() => {
+                status.innerText = "Listo para registrar";
+                status.className = "badge bg-secondary";
+            }, 1500);
+        })
+        .catch(() => {
+            status.innerText = "Error al guardar";
+            status.className = "badge bg-danger";
+        });
+    }
+
+    // --- FUNCIONES EXTRA ---
+    function agregarAulaManual() {
+        const sede = document.getElementById('selectSede').value;
+        if (!sede) return alert("Selecciona una sede primero");
+        const nueva = prompt("Nombre de la nueva aula:");
+        if (nueva) {
+            let registro = JSON.parse(localStorage.getItem('aulas_pers')) || [];
+            registro.push({ sede: sede, aula: nueva });
+            localStorage.setItem('aulas_pers', JSON.stringify(registro));
+            actualizarAulasPorSede();
+        }
+    }
+
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checks = document.querySelectorAll('.asis-check');
+        checks.forEach(c => {
+            if (c.checked !== this.checked) {
+                c.checked = this.checked;
+                registrarAsistencia(c);
+            }
+        });
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

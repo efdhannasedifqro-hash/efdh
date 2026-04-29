@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificación de Documentos - SEDIF</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
+        .logo { color: #7b7bb5; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px; }
+        .status-icon { font-size: 60px; margin-bottom: 20px; }
+        .valid { color: #27ae60; }
+        .invalid { color: #e74c3c; }
+        .data-box { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: left; margin-top: 20px; display: none; }
+        .data-box div { margin-bottom: 8px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">DIF ESTATAL QUERÉTARO</div>
+        <div id="loading">⌛ Verificando autenticidad...</div>
+        <div id="result-icon" class="status-icon"></div>
+        <h2 id="result-text"></h2>
+        <div id="data-box" class="data-box">
+            <div><b>Beneficiario:</b> <span id="res-nombre"></span></div>
+            <div><b>Documento:</b> <span id="res-tipo"></span></div>
+            <div><b>Fecha Emisión:</b> <span id="res-fecha"></span></div>
+        </div>
+        <p style="font-size: 0.8rem; color: #888; margin-top: 30px;">Sistema de Validación de Fe Pública EFDH</p>
+    </div>
+
+    <script>
+        const API = 'https://script.google.com/macros/s/AKfycby3HeIk2O6LsVlyYpHX1q5MckNU9_FYfqKKtShmSqUJ1Qpl5pKTAvCZ6vMqy0cY7IQ/exec'; 
+        const params = new URLSearchParams(window.location.search);
+        const folio = params.get('folio');
+        const codigo = params.get('codigo');
+
+        async function verificar() {
+            try {
+                const res = await fetch(`${API}?accion=verificar_documento&folio=${folio}&codigo=${codigo}`);
+                const data = await res.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                const icon = document.getElementById('result-icon');
+                const text = document.getElementById('result-text');
+
+                if (data.valido) {
+                    icon.innerText = '✅';
+                    icon.classList.add('valid');
+                    text.innerText = 'Documento Auténtico';
+                    document.getElementById('data-box').style.display = 'block';
+                    document.getElementById('res-nombre').innerText = data.beneficiario;
+                    document.getElementById('res-tipo').innerText = data.tipo;
+                    document.getElementById('res-fecha').innerText = data.fecha;
+                } else {
+                    icon.innerText = '❌';
+                    icon.classList.add('invalid');
+                    text.innerText = 'Documento No Válido';
+                }
+            } catch (e) {
+                document.getElementById('loading').innerText = '❌ Error al conectar con el servidor';
+            }
+        }
+        verificar();
+    </script>
+</body>
+</html>
