@@ -254,18 +254,23 @@
             enviarFormulario();
         }
 
-        async function cargarTalleres() {
+async function cargarTalleres() {
             const select = document.getElementById('taller');
             try {
                 // 🟢 LEER TALLERES DIRECTO DE GOOGLE
                 const res = await fetch(`${URL_APPS_SCRIPT}?accion=listar_talleres`);
                 const data = await res.json();
                 
-                // Extraer solo los nombres de los talleres activos
-                const talleres = data.map(item => item.nombre).filter(t => t);
+                // 🔴 AQUÍ ESTÁ LA MAGIA: Filtramos para que solo pasen los ACTIVOS
+                const talleresActivos = data
+                    .filter(item => item.estatus && item.estatus.toString().trim().toUpperCase() === 'ACTIVO')
+                    .map(item => item.nombre)
+                    .filter(nombre => nombre); // Evitamos nombres vacíos
                 
                 select.innerHTML = '<option value="">Seleccione el taller...</option>';
-                [...new Set(talleres)].forEach(nombre => {
+                
+                // Quitamos duplicados y pintamos las opciones
+                [...new Set(talleresActivos)].forEach(nombre => {
                     let opt = document.createElement('option');
                     opt.value = nombre; 
                     opt.textContent = nombre;
