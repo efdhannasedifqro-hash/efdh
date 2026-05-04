@@ -269,7 +269,7 @@ async function cargarTalleres() {
                 
                 select.innerHTML = '<option value="">Seleccione el taller...</option>';
                 
-                // Quitamos duplicados y pintamos las opciones
+                // Quitamos duplicados y pintamos las opciones 
                 [...new Set(talleresActivos)].forEach(nombre => {
                     let opt = document.createElement('option');
                     opt.value = nombre; 
