@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscripción Escuela FDH - Procuraduría SEDIF</title>
+    <style>
+        :root { 
+            --primary-purple: #7b7bb5; 
+            --secondary-blue: #4a90e2; 
+            --text-dark: #2c3e50; 
+            --bg-light: #f8faff; 
+            --success: #2ecc71; 
+        }
+        
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-light); padding: 10px; color: var(--text-dark); line-height: 1.6; }
+        .form-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 8px 30px rgba(123, 123, 181, 0.15); width: 100%; max-width: 700px; margin: auto; border-top: 10px solid var(--primary-purple); box-sizing: border-box; }
+        @media (min-width: 600px) { body { padding: 20px; } .form-card { padding: 40px; } }
+        
+        .header-logo { text-align: center; margin-bottom: 5px; font-weight: bold; color: var(--primary-purple); font-size: 1.1em; }
+        .sub-header { text-align: center; font-size: 0.85em; color: var(--secondary-blue); margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { text-align: center; font-size: 1.3em; margin-bottom: 5px; color: var(--text-dark); }
+        p.subtitle { text-align: center; color: #666; font-size: 0.85em; margin-bottom: 30px; }
+        
+        label { display: block; margin: 18px 0 6px; font-weight: 600; font-size: 0.9em; color: var(--primary-purple); }
+        input, select { width: 100%; padding: 14px; border: 2px solid #e1e8f0; border-radius: 6px; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
+        input:focus, select:focus { border-color: var(--secondary-blue); outline: none; }
+        
+        .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 600px) { .grid { grid-template-columns: 1fr 1fr; gap: 20px; } }
+        
+        .terms-box { background: #fdfdff; padding: 15px; border: 1px solid #e1e8f0; height: 180px; overflow-y: scroll; font-size: 0.85em; margin: 15px 0; border-radius: 6px; color: #555; text-align: justify; }
+        .check-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 25px 0; font-size: 0.9em; color: var(--text-dark); cursor: pointer; }
+        .check-container input { height: 22px; width: 22px; cursor: pointer; flex-shrink: 0; }
+        
+        .btn-main { background: var(--primary-purple); color: white; border: none; padding: 18px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1.1em; text-transform: uppercase; transition: 0.3s; box-shadow: 0 4px 10px rgba(123, 123, 181, 0.2); }
+        .btn-main:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .btn-info { background: #eef2ff; color: var(--secondary-blue); border: 2px dashed var(--secondary-blue); padding: 10px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 15px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-info:hover { background: var(--secondary-blue); color: white; }
+
+        .hidden-section { display: none; background: #f0f4ff; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid var(--secondary-blue); }
+        
+        /* ESTILOS DEL MODAL */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.9); backdrop-filter: blur(4px); }
+        .modal-content { background: white; margin: 5% auto; padding: 25px; width: 95%; max-width: 800px; border-radius: 12px; max-height: 90vh; display: flex; flex-direction: column; box-sizing: border-box; position: relative; }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: #aaa; }
+        .text-scroll { flex-grow: 1; overflow-y: auto; padding-right: 10px; margin-top: 10px; }
+        
+        /* ESTILOS ACORDEÓN TALLERES */
+        .accordion-item { border: 1px solid #eee; margin-bottom: 10px; border-radius: 8px; overflow: hidden; }
+        .accordion-header { background: #f8f9fa; padding: 15px; cursor: pointer; font-weight: bold; color: var(--primary-purple); display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .accordion-header:hover { background: #eef2ff; }
+        .accordion-content { display: none; padding: 15px; background: white; border-top: 1px solid #eee; font-size: 0.9em; }
+        .accordion-content p { margin: 5px 0; }
+        .tag-sede { background: #e1f5fe; color: #0277bd; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        
+        .list-temas { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+        .list-temas li { list-style: none; background: #fafafa; padding: 5px 10px; border-radius: 4px; font-size: 0.85em; border-left: 3px solid var(--secondary-blue); }
+        
+        @media (max-width: 600px) { .list-temas { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div class="form-card">
+        <div class="header-logo">DIF ESTATAL QUERÉTARO | UNIENDO CORAZONES</div>
+        <div class="sub-header">Procuraduría de Protección de Niñas, Niños y Adolescentes</div>
+        <h2>Escuela de Formación y Desarrollo Humano</h2>
+        <p class="subtitle">Ficha de Inscripción para:</p>
+        <p class="subtitle">Madres, Padres, Tutores y Cuidadores.</p>
+
+        <button type="button" class="btn-info" onclick="abrirCatalogoTalleres()">
+            <span>📖</span> Ver Objetivos, Temarios y Sedes de Talleres
+        </button>
+
+        <form id="inscripcionFdh">
+            <label>Correo electrónico *</label>
+            <input type="email" id="correo" placeholder="ejemplo@correo.com" required>
+            
+            <label>Nombre(s) *</label>
+            <input type="text" id="nombre" style="text-transform: uppercase;" required>
+            
+            <div class="grid">
+                <div><label>Apellido Paterno *</label><input type="text" id="paterno" style="text-transform: uppercase;" required></div>
+                <div><label>Apellido Materno *</label><input type="text" id="materno" style="text-transform: uppercase;" required></div>
+            </div>
+            
+            <div class="grid">
+                <div><label>Teléfono celular (10 dígitos) *</label><input type="tel" id="telefono" maxlength="10" pattern="[0-9]{10}" required></div>
+                <div><label>CURP (18 caracteres) *</label><input type="text" id="curp" maxlength="18" pattern="[A-Za-z0-9]{18}" style="text-transform: uppercase;" required></div>
+            </div>
+            
+            <label>Favor de seleccionar correctamente el taller que indicó la autoridad que lo canalizó o de quien realizó la recomendación, de acuerdo a su caso o situación familiar. *</label>
+            <select id="taller" required><option value="">Cargando talleres...</option></select>
+            
+            <label>Quién canaliza *</label>
+            <select id="canaliza" required onchange="manejarCanalizacion(this.value)">
+                <option value="">Seleccione...</option>
+                <option value="Juzgado Familiar">Juzgado Familiar</option>
+                <option value="Coordinación SEDIF">Coordinación SEDIF</option>
+                <option value="Voluntario">Voluntario</option>
+                <option value="Corazones Mágicos">Corazones Mágicos</option>
+                <option value="Centro de Asistencia Social">Centro de Asistencia Social</option>
+                <option value="Otros">Otros</option>
+            </select>
+            
+            <div id="seccionExpediente" class="hidden-section">
+                <label>Número de Expediente: *</label>
+                <input type="text" id="expediente" style="text-transform: uppercase;" placeholder="Ej. 1234/2024" pattern="[0-9]+/[0-9]{4}" title="El formato debe ser número de expediente seguido del año a 4 dígitos, por ejemplo: 123/2023">
+                
+                <label>Número de Juzgado *</label>
+                <select id="juzgado">
+                    <option value="">Seleccione el juzgado...</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                </select>
+            </div>
+            
+            <div id="seccionOtros" class="hidden-section">
+                <label>Especifique quién canaliza *</label><input type="text" id="canalizaOtro" style="text-transform: uppercase;">
+            </div>
+            
+            <input type="hidden" id="privacidadAceptada" value="false">
+            
+            <div class="terms-box">
+                <b>REGLAMENTO PARA PARTICIPANTES:</b><br><br>
+                1. Aceptar el reglamento.<br>
+                2. Tomar el o los talleres de la Escuela de FDHpMPTC en las instalaciones y domicilio de la institución indicados en la inscripción.<br>
+                3. Acudir de manera puntual (llegar 10 minutos antes) al o los talleres en los que estoy inscrita/inscrito.<br>
+                4. Asistir al total de sesiones de aprendizaje del taller o talleres en los que me he inscrito.<br>
+                5. Permanecer en cada sesión de aprendizaje del taller hasta que éste finalice.<br>
+                6. Suspender el uso del celular durante el taller.<br>
+                7. Participar de manera respetuosa y activa en cada sesión de aprendizaje.<br>
+                8. Realizar las tareas y los ejercicios que se indiquen por parte de las y los talleristas.<br>
+                9. Llevar mi propio control de asistencias.<br>
+                10. Portar libreta, anotar, repasar mis notas.<br>
+                11. Aplicar lo aprendido en este taller en mi vida diaria.<br>
+                12. Tomar menos de 8 sesiones de aprendizaje, no valida la obtención de mi Constancia de Terminación de Taller.<br>
+                13. No se admite el acceso de niñas, niños o adolescentes al taller.<br>
+                14. No se admite la asistencia de personas que no estén inscritas.<br>
+                15. Comportamientos indebidos en el proceso grupal, faltas de respeto al tallerista y/o a integrantes del grupo, causan la baja del taller y la notificación de la misma al juzgado correspondiente o área que derive.<br>
+                16. Asumir las consecuencias derivadas de un comportamiento inadecuado de mi parte, tales, como faltas de respeto a las talleristas y/o a quienes integran el grupo.
+            </div>
+            
+            <label class="check-container">
+                <input type="checkbox" id="aceptoReglamento" required>
+                <span>He leído y acepto el reglamento. *</span>
+            </label>
+            
+            <button type="submit" id="btnEnviar" class="btn-main">Realizar Inscripción</button>
+        </form>
+    </div>
+
+    <div id="miModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; height: auto;">
+            <h3 style="color: var(--primary-purple); margin-top:0;">Aviso de Privacidad Simplificado</h3>
+            <div class="text-scroll">
+                <p>La Procuraduría de Protección de Niñas, Niños y Adolescentes del Estado de Querétaro informa que sus datos personales serán tratados para el proceso de inscripción y seguimiento a los talleres de la Escuela de Formación y Desarrollo Humano.</p>
+                <p>Usted puede ejercer sus derechos de acceso o rectificación enviando una solicitud oficial a la institución.</p>
+                <p><a href="https://github.com/cterrazas0104/constancias/blob/main/aviso_privacidad.pdf" target="_blank" style="color: var(--secondary-blue); font-weight: bold;">Ver documento completo (PDF)</a></p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="confirmarPrivacidad()" style="background: var(--secondary-blue); color:white; border:none; padding: 15px 25px; border-radius:6px; cursor:pointer; font-weight:bold; width: 100%;">ACEPTAR Y CONTINUAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalCatalogo" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="cerrarCatalogo()">×</span>
+            <h3 style="color: var(--primary-purple); margin-top:0; text-align:center;">Catálogo de Talleres</h3>
+            <p style="text-align:center; font-size:0.9em; color:#666; margin-bottom:15px;">Haga clic en el nombre del taller para ver detalles.</p>
+            
+            <div id="listaTalleres" class="text-scroll">
+                </div>
+            
+            <div class="modal-footer">
+                <button onclick="cerrarCatalogo()" style="background: #ccc; color:#333; border:none; padding: 10px 20px; border-radius:6px; cursor:pointer; font-weight:bold;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🚀 URL DIRECTA A GOOGLE APPS SCRIPT (Reemplaza a Make)
+        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxIqnneU9iTy44ipLbkumNkzDYrsS_kg4IQavAw9TKBSOPY0PjGiy19HSvRLDDBVKVfAA/exec'; 
+        let estaEnviando = false;
+
+        // --- DATOS DE LOS TALLERES (SIN HORARIOS) ---
+        const INFO_TALLERES = [
+            { nombre: "Conductas de riesgo de la vida familiar (El poder de la familia)", obj: "Brindar herramientas...", sede: "Centro Cultural Manuel Gómez Morín", temas: ["Conductas de riesgo", "Depresión", "Ansiedad", "Consumo de sustancias", "Autoestima", "Manejo de emociones"] },
+            { nombre: "Solución de Conflictos en Procesos de Separación o Divorcio", obj: "Facilitar un espacio...", sede: "Centro Cultural Manuel Gómez Morín", temas: ["Teoría del conflicto", "Mecanismos de solución", "Habilidades de mediación", "Modelo de policía de proximidad"] },
+            { nombre: "Competencias Parentales", obj: "Brindar herramientas...", sede: "Psyque IAP (Circuito Universitario)", temas: ["Padres responsables", "Apego seguro", "Violencia familiar", "Inteligencia emocional", "Manejo de estrés", "Maltrato infantil"] },
+            { nombre: "Herramientas para la crianza con hijos adolescentes", obj: "Ofrecer un espacio...", sede: "Centro Cultural Manuel Gómez Morín", temas: ["Responsabilidades parentales", "Adolescente y familia", "Crianza positiva", "Autocuidado", "Delitos Cibernéticos", "Manejo de conflictos"] },
+            { nombre: "¿Qué le falta a tu casa?", obj: "Mejorar la convivencia...", sede: "Se confirma al inscribirse.", temas: ["Valores", "Comunicación", "Expresión de sentimientos", "Supervisión", "Normas y reglas", "Factores protectores"] },
+            { nombre: "Espacios de hombres: responsabilidad, poder y vínculos", obj: "Confrontar a los participantes...", sede: "Invierno 89, Col. España", temas: ["Violencia y consecuencias", "Masculinidad y poder", "Las 7 P's de la violencia", "Sexualidad sin violencia", "Autocontrol"] },
+            { nombre: "Crianza Afectiva (Escuela de las Familias)", obj: "Promover contextos familiares...", sede: "Salón Adulto Mayor (Quintas del Marqués)", temas: ["Mirada al interior", "Inteligencia emocional", "Heridas de infancia", "Autoestima familiar", "Estilos de crianza", "Lenguajes del amor"] },
+            { nombre: "Cerrando para Sanar (Reingeniería Familiar)", obj: "Brindar un espacio de contención...", sede: "Salón Adulto Mayor (Quintas del Marqués)", temas: ["Impacto de la separación", "Duelo", "El perdón", "Autoestima familiar", "Estilos de crianza", "Acuerdos para el bienestar"] },
+            { nombre: "Relaciones Familiares Sanas", obj: "Facilitar un espacio de reflexión...", sede: "Centro Cultural Manuel Gómez Morín", temas: ["Tipos de familia", "Dinámica familiar", "Violencia", "Comunicación asertiva", "Emociones", "Parentalidad positiva"] },
+            { nombre: "Vida, Estrés y Crianza (Democratización de las familias)", obj: "Crear un espacio de escucha...", sede: "Centro Cultural Manuel Gómez Morín", temas: ["Expectativas vs Realidad", "¿Qué es el estrés?", "Límites claros", "Crianza positiva", "Vínculo parental", "Culpa y duelo"] },
+            { nombre: "Habilidades de Crianza para Cuidadores de Niñas, Niños y/o Adolescentes", obj: "Facilitar un espacio de reflexión...", sede: "Centro Cultural Manuel Gómez Morín", temas: ["Cuidados de NNA", "Buen trato", "Resiliencia", "Maltrato infantil", "Apego", "Competencias parentales"] },
+            { nombre: "Vivir sin Violencia y en Igualdad: herramientas para la vida cotidiana.", obj: "Brindar a las personas...", sede: "Se confirma al inscribirse.", temas: ["ABC de género", "Igualdad y no discriminación", "Tipos de violencia", "Amor romántico vs real", "Violencia sexual", "Masculinidades positivas"] }
+        ];
+
+        // --- LÓGICA DEL CATÁLOGO ---
+        function abrirCatalogoTalleres() {
+            const contenedor = document.getElementById('listaTalleres');
+            if (contenedor.innerHTML.trim() === "") {
+                INFO_TALLERES.forEach((t, index) => {
+                    let temasHtml = t.temas.map(tema => `<li>${tema}</li>`).join('');
+                    let html = `
+                        <div class="accordion-item">
+                            <div class="accordion-header" onclick="toggleAcordeon(${index})">
+                                <span>${t.nombre}</span><span>▼</span>
+                            </div>
+                            <div class="accordion-content" id="content-${index}">
+                                <p><strong>Objetivo:</strong> ${t.obj}</p>
+                                <p><span class="tag-sede">📍 ${t.sede}</span></p>
+                                <p><strong>Temáticas principales:</strong></p>
+                                <ul class="list-temas">${temasHtml}</ul>
+                            </div>
+                        </div>`;
+                    contenedor.innerHTML += html;
+                });
+            }
+            document.getElementById('modalCatalogo').style.display = 'block';
+        }
+
+        function toggleAcordeon(index) {
+            const content = document.getElementById(`content-${index}`);
+            if (content.style.display === "block") content.style.display = "none";
+            else {
+                document.querySelectorAll('.accordion-content').forEach(el => el.style.display = 'none');
+                content.style.display = "block";
+            }
+        }
+
+        function cerrarCatalogo() { document.getElementById('modalCatalogo').style.display = 'none'; }
+
+        // --- LÓGICA DEL FORMULARIO ---
+        function confirmarPrivacidad() {
+            document.getElementById('miModal').style.display = 'none';
+            document.getElementById('privacidadAceptada').value = "true";
+            enviarFormulario();
+        }
+
+async function cargarTalleres() {
+            const select = document.getElementById('taller');
+            try {
+                // 🟢 LEER TALLERES DIRECTO DE GOOGLE
+                const res = await fetch(`${URL_APPS_SCRIPT}?accion=listar_talleres`);
+                const data = await res.json();
+                
+                //  Filtramos para que solo pasen los ACTIVOS
+                const talleresActivos = data
+                    .filter(item => item.estatus && item.estatus.toString().trim().toUpperCase() === 'ACTIVO')
+                    .map(item => item.nombre)
+                    .filter(nombre => nombre); // Evitamos nombres vacíos
+                
+                select.innerHTML = '<option value="">Seleccione el taller...</option>';
+                
+                // Quitamos duplicados y pintamos las opciones
+                [...new Set(talleresActivos)].forEach(nombre => {
+                    let opt = document.createElement('option');
+                    opt.value = nombre; 
+                    opt.textContent = nombre;
+                    select.appendChild(opt);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        function manejarCanalizacion(valor) {
+            document.getElementById('seccionExpediente').style.display = (valor === 'Juzgado Familiar') ? 'block' : 'none';
+            document.getElementById('seccionOtros').style.display = (valor === 'Otros') ? 'block' : 'none';
+            document.getElementById('expediente').required = (valor === 'Juzgado Familiar');
+            document.getElementById('juzgado').required = (valor === 'Juzgado Familiar');
+            document.getElementById('canalizaOtro').required = (valor === 'Otros');
+        }
+
+        document.getElementById('inscripcionFdh').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (estaEnviando) return;
+            if (document.getElementById('privacidadAceptada').value === "false") {
+                document.getElementById('miModal').style.display = 'block';
+            } else {
+                enviarFormulario();
+            }
+        });
+
+        async function enviarFormulario() {
+            if (estaEnviando) return;
+            estaEnviando = true;
+            const btn = document.getElementById('btnEnviar');
+            btn.innerText = "PROCESANDO SOLICITUD..."; // Mensaje más descriptivo
+            btn.style.background = "#aaa";
+            btn.disabled = true;
+
+            let canalizaVal = document.getElementById('canaliza').value;
+            if (canalizaVal === 'Otros') canalizaVal = document.getElementById('canalizaOtro').value.trim().toUpperCase();
+
+            const curpVal = document.getElementById('curp').value.trim().toUpperCase();
+            const sexoExtraido = curpVal.length >= 11 ? curpVal.charAt(10) : "N/A";
+
+            const datos = {
+                accion: 'nueva_inscripcion', // 🟢 LLAVE QUE ACTIVA EL SCRIPT EN GOOGLE
+                correo_electronico: document.getElementById('correo').value.trim().toLowerCase(),
+                nombres: document.getElementById('nombre').value.trim().toUpperCase(),
+                paterno: document.getElementById('paterno').value.trim().toUpperCase(),
+                materno: document.getElementById('materno').value.trim().toUpperCase(),
+                telefono: document.getElementById('telefono').value.trim(),
+                curp: curpVal,
+                sexo: sexoExtraido,
+                taller: document.getElementById('taller').value,
+                canaliza: canalizaVal,
+                expediente: document.getElementById('expediente').value.trim().toUpperCase() || "N/A",
+                juzgado: document.getElementById('juzgado').value || "N/A"
+            };
+
+            try {
+                // 🟢 ENVÍO DIRECTO A GOOGLE APPS SCRIPT
+                const response = await fetch(URL_APPS_SCRIPT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Truco anti-CORS de Google
+                    body: JSON.stringify(datos)
+                });
+
+                if (response.ok) {
+                    alert("¡Inscripción exitosa! En breve recibirá su folio por correo.");
+                    location.reload();
+                }
+            } catch (error) { 
+                alert("Error al enviar. Por favor intente de nuevo."); 
+                estaEnviando = false;
+                btn.disabled = false; 
+                btn.style.background = "var(--primary-purple)";
+                btn.innerText = "Realizar Inscripción"; 
+            }
+        }
+
+        window.onload = cargarTalleres;
+    </script>
+</body>
+</html>
