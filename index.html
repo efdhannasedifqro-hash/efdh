@@ -261,7 +261,7 @@ async function cargarTalleres() {
                 const res = await fetch(`${URL_APPS_SCRIPT}?accion=listar_talleres`);
                 const data = await res.json();
                 
-                // 🔴 AQUÍ ESTÁ LA MAGIA: Filtramos para que solo pasen los ACTIVOS
+                //  Filtramos para que solo pasen los ACTIVOS
                 const talleresActivos = data
                     .filter(item => item.estatus && item.estatus.toString().trim().toUpperCase() === 'ACTIVO')
                     .map(item => item.nombre)
