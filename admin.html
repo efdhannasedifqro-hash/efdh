@@ -769,40 +769,22 @@ function verRespuestas(folio) {
 
             document.getElementById('modal-titulo').innerText = "Respuestas de Evaluación";
 
+            // Imprimimos el objeto al en consola para depurar si fuera necesario
+            console.log("Datos del alumno:", al);
+
             let contenido = `<div style="padding: 10px; font-size: 0.95em;">
                 <p><b>Folio:</b> ${al.folio}</p>
                 <p><b>Fecha de respuesta:</b> ${al.encuesta_fecha || 'No registrada'}</p>
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
                 
                 <div style="display:grid; grid-template-columns: 1fr; gap:15px;">
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Duración</span>
-                        <strong style="color: #333;">${al.duracion || 'Sin respuesta'}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Desempeño</span>
-                        <strong style="color: #333;">${al.desempeno || 'Sin respuesta'}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Estrategias</span>
-                        <strong style="color: #333;">${al.estrategias || 'Sin respuesta'}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Contenido</span>
-                        <strong style="color: #333;">${al.contenido || 'Sin respuesta'}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Participación</span>
-                        <strong style="color: #333;">${al.participacion || 'Sin respuesta'}</strong>
-                    </div>
-                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Puntualidad</span>
-                        <strong style="color: #333;">${al.puntualidad || 'Sin respuesta'}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Aplicación</span>
-                        <strong style="color: #333;">${al.aplicacion || 'Sin respuesta'}</strong>
-                    </div>
+                    ${generarCampo("Duración", al.duracion)}
+                    ${generarCampo("Desempeño", al.desempeno)}
+                    ${generarCampo("Estrategias", al.estrategias)}
+                    ${generarCampo("Contenido", al.contenido)}
+                    ${generarCampo("Participación", al.participacion)}
+                    ${generarCampo("Puntualidad", al.puntualidad)}
+                    ${generarCampo("Aplicación", al.aplicacion)}
                     <div style="background: #eef2ff; padding: 12px; border-radius: 6px; border: 1px solid var(--primary);">
                         <span style="display:block; font-size:0.85em; color:var(--primary); margin-bottom:4px; font-weight:bold;">¿Recomendaría el taller?</span>
                         <strong style="color: #333; font-size: 1.1em;">${al.recomendaria || 'Sin respuesta'}</strong>
@@ -819,6 +801,14 @@ function verRespuestas(folio) {
             document.getElementById('modal-footer').innerHTML = `
                 <button class="btn-primary" onclick="abrirExpediente('${folio}', 'terminado')">⬅ VOLVER AL EXPEDIENTE</button>
             `;
+        }
+
+        // Función auxiliar para evitar código repetido y manejar nulos
+        function generarCampo(titulo, valor) {
+            return `<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">${titulo}</span>
+                        <strong style="color: #333;">${valor || 'Sin respuesta'}</strong>
+                    </div>`;
         }
 
         async function procesarValidacion(folio, decision) {
