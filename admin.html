@@ -80,7 +80,7 @@
             <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">Use su cuenta institucional</p>
             
             <div id="g_id_onload"
-                 data-client_id="909923294612-sosvds97e5lmi76g3jtjf1kjdltsd36h.apps.googleusercontent.com"
+                 data-client_id="1002166167341-diguctcp78ppfvup8i8kof4l9herp18h.apps.googleusercontent.com"
                  data-context="signin"
                  data-ux_mode="popup"
                  data-callback="manejarRespuestaGoogle"
@@ -264,7 +264,7 @@
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
                 
                 <div style="font-size: 0.95em; color: #666; text-align: left; padding-left: 10px;">
-                    <p><b>Versión:</b> 1.6 (Build Normativo - 2026)</p>
+                    <p><b>Versión:</b> 1.6.1 (Build Producción - Evaluaciones)</p>
                     <p><b>Arquitectura:</b> Ecosistema Serverless y PWA</p>
                     <p><b>Cumplimiento Normativo:</b> Arts. 17, 32, 34 y 50 (SSTI-SF)</p>
                 </div>
@@ -280,7 +280,7 @@
     </div>
 
     <script>
-        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxIqnneU9iTy44ipLbkumNkzDYrsS_kg4IQavAw9TKBSOPY0PjGiy19HSvRLDDBVKVfAA/exec';
+        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycby3HeIk2O6LsVlyYpHX1q5MckNU9_FYfqKKtShmSqUJ1Qpl5pKTAvCZ6vMqy0cY7IQ/exec';
         let inscritosGlobal = [];
         let usuarioLogueado = {};
         let miGrafica = null;
@@ -555,9 +555,10 @@
             document.getElementById('body-nuevas').innerHTML = nuevas.map(al => `<tr><td><b>${al.folio}</b></td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'validar')">Gestionar</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">Sin pendientes</td></tr>';
             document.getElementById('body-activos').innerHTML = activos.map(al => `<tr><td>${al.folio}</td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><b>${al.asistencias || 0} / 8</b></td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'activo')">Ver Detalle</button></td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center">No hay alumnos activos</td></tr>';
 
+            // Cambio: "Ver Evaluación" por "Ver Expediente"
             document.getElementById('body-terminados').innerHTML = terminados.map(al => {
                 const esGraduado = (al.estatus === "Evaluación Recibida");
-                return `<tr><td>${al.folio}</td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><span class="status-pill ${esGraduado ? 'pill-active' : 'val-no'}">${esGraduado ? "✅ Finalizado" : "⏳ Pendiente Encuesta"}</span></td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'terminado')">Ver Evaluación</button></td></tr>`
+                return `<tr><td>${al.folio}</td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><span class="status-pill ${esGraduado ? 'pill-active' : 'val-no'}">${esGraduado ? "✅ Finalizado" : "⏳ Pendiente Encuesta"}</span></td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'terminado')">Ver Expediente</button></td></tr>`
             }).join('') || '<tr><td colspan="5" style="text-align:center">Sin terminados</td></tr>';
 
             document.getElementById('body-rechazados').innerHTML = rechazados.map(al => `
@@ -736,6 +737,14 @@
                 }
             } else {
                 if (tipo === 'terminado' || tipo === 'graduado') {
+                    // BOTÓN NUEVO: Solo si ya contestó la encuesta
+                    if (al.encuesta_fecha) {
+                        botonesFooter += `
+                            <button class="btn-action" style="background:#8e44ad; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="verRespuestas('${al.folio}')">
+                                📝 VER RESPUESTAS DE EVALUACIÓN
+                            </button>
+                        `;
+                    }
                     botonesFooter += `
                         <button class="btn-action" style="background:#27ae60; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="reenviarFinal('${al.folio}')">
                             🎓 REENVIAR DIPLOMA FINAL
@@ -754,6 +763,48 @@
 
             document.getElementById('modal-footer').innerHTML = botonesFooter;
             document.getElementById('modal-detalle').style.display = 'flex';
+        }
+
+        // --- NUEVA FUNCIÓN PARA CAMBIAR EL MODAL Y MOSTRAR LAS RESPUESTAS ---
+        function verRespuestas(folio) {
+            const al = inscritosGlobal.find(a => a.folio === folio);
+            if (!al) return;
+
+            document.getElementById('modal-titulo').innerText = "Respuestas de Evaluación";
+
+            let contenido = `<div style="padding: 10px; font-size: 0.95em;">
+                <p><b>Folio:</b> ${al.folio}</p>
+                <p><b>Fecha de respuesta:</b> ${al.encuesta_fecha}</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">`;
+
+            if (al.respuestas && al.respuestas.length > 0) {
+                // Si la API ya nos manda las respuestas
+                al.respuestas.forEach((resp, index) => {
+                    if(resp) {
+                        contenido += `<div style="margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                            <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Respuesta ${index + 1}</span>
+                            <strong style="color: #333;">${resp}</strong>
+                        </div>`;
+                    }
+                });
+            } else {
+                // Aviso elegante de que necesitamos actualizar Apps Script para jalarlas
+                contenido += `
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; color: #856404; line-height: 1.6;">
+                    <b>¡Evaluación Recibida Exitosamente!</b><br>
+                    Las respuestas están almacenadas de forma segura en la base de datos maestra (Google Sheets) a partir de la columna AD.<br><br>
+                    <i>*Nota para el Administrador: Para visualizar el texto de las respuestas directamente en este recuadro, es necesario agregar la línea <code>respuestas: row.slice(29, 41)</code> en la función <code>leerHoja</code> del Google Apps Script.</i>
+                </div>`;
+            }
+
+            contenido += `</div>`;
+            
+            document.getElementById('modal-contenido').innerHTML = contenido;
+            
+            // Botón para volver a inyectar el expediente original sin cerrar el modal
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn-primary" onclick="abrirExpediente('${folio}', 'terminado')">⬅ VOLVER AL EXPEDIENTE</button>
+            `;
         }
 
         async function procesarValidacion(folio, decision) {
