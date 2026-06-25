@@ -763,7 +763,7 @@
             document.getElementById('modal-detalle').style.display = 'flex';
         }
 
-        function verRespuestas(folio) {
+function verRespuestas(folio) {
             const al = inscritosGlobal.find(a => a.folio === folio);
             if (!al) return;
 
@@ -771,45 +771,45 @@
 
             let contenido = `<div style="padding: 10px; font-size: 0.95em;">
                 <p><b>Folio:</b> ${al.folio}</p>
-                <p><b>Fecha de respuesta:</b> ${al.encuesta_fecha || al.Fecha_Evaluacion || 'No registrada'}</p>
+                <p><b>Fecha de respuesta:</b> ${al.encuesta_fecha || 'No registrada'}</p>
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
                 
                 <div style="display:grid; grid-template-columns: 1fr; gap:15px;">
                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Duración del taller</span>
-                        <strong style="color: #333;">${al.duracion || al.Duracion || 'Sin respuesta'}</strong>
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Duración</span>
+                        <strong style="color: #333;">${al.duracion || 'Sin respuesta'}</strong>
                     </div>
                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Desempeño del ponente</span>
-                        <strong style="color: #333;">${al.desempeno || al.Desempeno || 'Sin respuesta'}</strong>
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Desempeño</span>
+                        <strong style="color: #333;">${al.desempeno || 'Sin respuesta'}</strong>
                     </div>
                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Estrategias y dinámicas</span>
-                        <strong style="color: #333;">${al.estrategias || al.Estrategias || 'Sin respuesta'}</strong>
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Estrategias</span>
+                        <strong style="color: #333;">${al.estrategias || 'Sin respuesta'}</strong>
                     </div>
                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Contenido del taller</span>
-                        <strong style="color: #333;">${al.contenido || al.Contenido || 'Sin respuesta'}</strong>
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Contenido</span>
+                        <strong style="color: #333;">${al.contenido || 'Sin respuesta'}</strong>
                     </div>
                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Participación e interacción</span>
-                        <strong style="color: #333;">${al.participacion || al.Participacion || 'Sin respuesta'}</strong>
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Participación</span>
+                        <strong style="color: #333;">${al.participacion || 'Sin respuesta'}</strong>
                     </div>
                      <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
                         <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Puntualidad</span>
-                        <strong style="color: #333;">${al.puntualidad || al.Puntualidad || 'Sin respuesta'}</strong>
+                        <strong style="color: #333;">${al.puntualidad || 'Sin respuesta'}</strong>
                     </div>
                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Aplicación práctica en la vida</span>
-                        <strong style="color: #333;">${al.aplicacion || al.Aplicacion || 'Sin respuesta'}</strong>
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Aplicación</span>
+                        <strong style="color: #333;">${al.aplicacion || 'Sin respuesta'}</strong>
                     </div>
                     <div style="background: #eef2ff; padding: 12px; border-radius: 6px; border: 1px solid var(--primary);">
                         <span style="display:block; font-size:0.85em; color:var(--primary); margin-bottom:4px; font-weight:bold;">¿Recomendaría el taller?</span>
-                        <strong style="color: #333; font-size: 1.1em;">${al.recomendaria || al.Recomendaria || 'Sin respuesta'}</strong>
+                        <strong style="color: #333; font-size: 1.1em;">${al.recomendaria || 'Sin respuesta'}</strong>
                     </div>
                     <div style="background: #eef2ff; padding: 12px; border-radius: 6px; border: 1px solid var(--primary);">
                         <span style="display:block; font-size:0.85em; color:var(--primary); margin-bottom:4px; font-weight:bold;">¿Tomaría otro taller?</span>
-                        <strong style="color: #333; font-size: 1.1em;">${al.otro_taller || al.Otro_Taller || 'Sin respuesta'}</strong>
+                        <strong style="color: #333; font-size: 1.1em;">${al.otro_taller || 'Sin respuesta'}</strong>
                     </div>
                 </div>
             </div>`;
