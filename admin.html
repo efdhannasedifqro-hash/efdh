@@ -264,7 +264,7 @@
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
                 
                 <div style="font-size: 0.95em; color: #666; text-align: left; padding-left: 10px;">
-                    <p><b>Versión:</b> 1.6 (Build Normativo - 2026)</p>
+                    <p><b>Versión:</b> 1.6.2 (Hardened - Anti-XSS)</p>
                     <p><b>Arquitectura:</b> Ecosistema Serverless y PWA</p>
                     <p><b>Cumplimiento Normativo:</b> Arts. 17, 32, 34 y 50 (SSTI-SF)</p>
                 </div>
@@ -280,11 +280,21 @@
     </div>
 
     <script>
-        /*const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxIqnneU9iTy44ipLbkumNkzDYrsS_kg4IQavAw9TKBSOPY0PjGiy19HSvRLDDBVKVfAA/exec';*/
-        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxEURBRvXXXhyuOQV0qGdz3pJYCPvofX5QhIfulOchDiFNtBc58CngL93bibF8hpxKq7g/exec';
+        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxIqnneU9iTy44ipLbkumNkzDYrsS_kg4IQavAw9TKBSOPY0PjGiy19HSvRLDDBVKVfAA/exec';
         let inscritosGlobal = [];
         let usuarioLogueado = {};
         let miGrafica = null;
+
+        // --- FUNCIÓN GUARDIÁN ANTI-XSS ---
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
         function decodificarJWT(token) {
             const base64Url = token.split('.')[1];
@@ -357,14 +367,14 @@
 
         function procesarFechaFuerte(fechaStr) {
             if (!fechaStr) return null;
-            const soloFecha = fechaStr.split(' ')[0]; 
+            const soloFecha = fechaStr.split(' '); 
 
             if (soloFecha.includes('/') || soloFecha.includes('-')) {
                 const separador = soloFecha.includes('/') ? '/' : '-';
                 const partes = soloFecha.split(separador);
                 
                 if (partes.length === 3) {
-                    let dia = partes[0];
+                    let dia = partes;
                     let mes = partes[1];
                     let anio = partes[2];
                     if (anio.length === 2) anio = "20" + anio;
@@ -419,9 +429,9 @@
                 setPersonasActivas = inscritosGlobal; 
 
             } else {
-                labelMes.innerText = document.getElementById('filtro-mes-stats').selectedOptions[0].text;
+                labelMes.innerText = document.getElementById('filtro-mes-stats').selectedOptions.text;
                 badgeMes.style.display = "block";
-                tituloTabla.innerText = `(Actividad en: ${document.getElementById('filtro-mes-stats').selectedOptions[0].text})`;
+                tituloTabla.innerText = `(Actividad en: ${document.getElementById('filtro-mes-stats').selectedOptions.text})`;
 
                 inscritosGlobal.forEach(al => {
                     const mesReg = procesarFechaFuerte(al.fecha_registro);
@@ -515,7 +525,7 @@
                 const porc = tInscritos > 0 ? Math.round((tTerminados / tInscritos) * 100) : (tTerminados > 0 ? 100 : 0);
                 
                 return `<tr>
-                    <td>${t}</td>
+                    <td>${escapeHTML(t)}</td>
                     <td style="text-align:center">
                         <span style="font-size:1.1em; font-weight:bold;">${tInscritos}</span><br>
                         <small><span style="color:var(--man); font-weight:bold;">${hInscritos}H</span> | <span style="color:var(--woman); font-weight:bold;">${mInscritos}M</span></small>
@@ -553,21 +563,22 @@
                 else { badge.style.display = 'none'; }
             }
             
-            document.getElementById('body-nuevas').innerHTML = nuevas.map(al => `<tr><td><b>${al.folio}</b></td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'validar')">Gestionar</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">Sin pendientes</td></tr>';
-            document.getElementById('body-activos').innerHTML = activos.map(al => `<tr><td>${al.folio}</td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><b>${al.asistencias || 0} / 8</b></td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'activo')">Ver Detalle</button></td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center">No hay alumnos activos</td></tr>';
+            document.getElementById('body-nuevas').innerHTML = nuevas.map(al => `<tr><td><b>${escapeHTML(al.folio)}</b></td><td>${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)}</td><td>${escapeHTML(al.taller)}</td><td><button class="btn-action" onclick="abrirExpediente('${escapeHTML(al.folio)}', 'validar')">Gestionar</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">Sin pendientes</td></tr>';
+            
+            document.getElementById('body-activos').innerHTML = activos.map(al => `<tr><td>${escapeHTML(al.folio)}</td><td>${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)}</td><td>${escapeHTML(al.taller)}</td><td><b>${escapeHTML(al.asistencias || 0)} / 8</b></td><td><button class="btn-action" onclick="abrirExpediente('${escapeHTML(al.folio)}', 'activo')">Ver Detalle</button></td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center">No hay alumnos activos</td></tr>';
 
             document.getElementById('body-terminados').innerHTML = terminados.map(al => {
                 const esGraduado = (al.estatus === "Evaluación Recibida");
-                return `<tr><td>${al.folio}</td><td>${al.nombres} ${al.paterno}</td><td>${al.taller}</td><td><span class="status-pill ${esGraduado ? 'pill-active' : 'val-no'}">${esGraduado ? "✅ Finalizado" : "⏳ Pendiente Encuesta"}</span></td><td><button class="btn-action" onclick="abrirExpediente('${al.folio}', 'terminado')">Ver Expediente</button></td></tr>`
+                return `<tr><td>${escapeHTML(al.folio)}</td><td>${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)}</td><td>${escapeHTML(al.taller)}</td><td><span class="status-pill ${esGraduado ? 'val-si' : 'val-no'}">${esGraduado ? "✅ Finalizado" : "⏳ Pendiente Encuesta"}</span></td><td><button class="btn-action" onclick="abrirExpediente('${escapeHTML(al.folio)}', 'terminado')">Ver Expediente</button></td></tr>`
             }).join('') || '<tr><td colspan="5" style="text-align:center">Sin terminados</td></tr>';
 
             document.getElementById('body-rechazados').innerHTML = rechazados.map(al => `
                 <tr>
-                    <td><b>${al.folio}</b></td>
-                    <td>${al.nombres} ${al.paterno}</td>
-                    <td>${al.taller}</td>
+                    <td><b>${escapeHTML(al.folio)}</b></td>
+                    <td>${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)}</td>
+                    <td>${escapeHTML(al.taller)}</td>
                     <td style="color:var(--danger);">
-                        <small><b>${al.motivo || "Sin motivo especificado"}</b></small>
+                        <small><b>${escapeHTML(al.motivo || "Sin motivo especificado")}</b></small>
                     </td>
                 </tr>
             `).join('') || '<tr><td colspan="4" style="text-align:center">No hay registros rechazados</td></tr>';
@@ -618,7 +629,7 @@
                 if (al.validado === "No" || al.validado === "Rechazado") {
                     estadoBadge = "🚫 RECHAZADO";
                     colorBg = "#fff5f5"; borderColor = "var(--danger)";
-                    infoExtra = `<p><b>Motivo del rechazo:</b> <span style="color:var(--danger);">${al.motivo || "No especificado"}</span></p>`;
+                    infoExtra = `<p><b>Motivo del rechazo:</b> <span style="color:var(--danger);">${escapeHTML(al.motivo || "No especificado")}</span></p>`;
                 } else if (!al.validado || al.validado === "") {
                     estadoBadge = "📩 PENDIENTE DE VALIDAR";
                     colorBg = "#f8f9fa";
@@ -629,9 +640,9 @@
                 } else {
                     estadoBadge = "⏳ ACTIVO (EN CURSO)";
                     colorBg = "#eef2ff"; borderColor = "var(--primary)";
-                    let fechas = al.fechas_asis && al.fechas_asis.length > 0 ? al.fechas_asis.join(", ") : "Aún no tiene asistencias";
+                    let fechas = al.fechas_asis && al.fechas_asis.length > 0 ? al.fechas_asis.map(f => escapeHTML(f)).join(", ") : "Aún no tiene asistencias";
                     infoExtra = `
-                        <p><b>Asistencias acumuladas:</b> ${al.asistencias || 0} / 8</p>
+                        <p><b>Asistencias acumuladas:</b> ${escapeHTML(al.asistencias || 0)} / 8</p>
                         <p><b>Fechas en las que asistió:</b> ${fechas}</p>
                     `;
                 }
@@ -639,22 +650,22 @@
                 html += `
                 <div style="background:${colorBg}; border:1px solid ${borderColor}; padding:20px; border-radius:10px; margin-bottom:15px; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
                     <div style="display:flex; justify-content:space-between; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom:10px;">
-                        <span style="font-weight:bold; color:var(--text); font-size:1.1em;">${al.nombres} ${al.paterno} ${al.materno}</span>
+                        <span style="font-weight:bold; color:var(--text); font-size:1.1em;">${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)} ${escapeHTML(al.materno)}</span>
                         <span style="font-weight:bold; color:${borderColor};">${estadoBadge}</span>
                     </div>
                     
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.9em; margin-bottom:10px;">
-                        <div><b>Folio:</b> ${al.folio}</div>
-                        <div><b>CURP:</b> ${al.curp || "N/A"}</div>
-                        <div style="grid-column: span 2;"><b>Taller:</b> ${al.taller}</div>
+                        <div><b>Folio:</b> ${escapeHTML(al.folio)}</div>
+                        <div><b>CURP:</b> ${escapeHTML(al.curp || "N/A")}</div>
+                        <div style="grid-column: span 2;"><b>Taller:</b> ${escapeHTML(al.taller)}</div>
                     </div>
 
                     <div style="background:#f0f4ff; padding:10px; border-radius:6px; font-size:0.85em; display:grid; grid-template-columns: 1fr 1fr; gap:5px; border:1px solid #d1d9e6;">
                         <div style="grid-column: span 2; border-bottom:1px solid #d1d9e6; margin-bottom:5px; font-weight:bold; color:var(--primary);">DATOS DE CONTACTO Y ORIGEN:</div>
-                        <div><b>📧 Correo:</b> ${al.correo}</div>
-                        <div><b>📱 Teléfono:</b> ${al.telefono}</div>
-                        <div><b>⚖️ Canaliza:</b> ${al.canaliza}</div>
-                        <div><b>📂 Expediente:</b> ${al.expediente} (Juzgado ${al.juzgado})</div>
+                        <div><b>📧 Correo:</b> ${escapeHTML(al.correo)}</div>
+                        <div><b>📱 Teléfono:</b> ${escapeHTML(al.telefono)}</div>
+                        <div><b>⚖️ Canaliza:</b> ${escapeHTML(al.canaliza)}</div>
+                        <div><b>📂 Expediente:</b> ${escapeHTML(al.expediente)} (Juzgado ${escapeHTML(al.juzgado)})</div>
                     </div>
 
                     <div style="margin-top:10px; background:white; padding:10px; border-radius:6px; border:1px solid #eee; font-size:0.85em;">
@@ -678,11 +689,11 @@
             const hFin = al.folio_val_fin || "No generado aún";
             
             resBox.innerHTML = `
-                <h4>Resultados para: ${folio}</h4>
-                <p><b>Alumno:</b> ${al.nombres} ${al.paterno}</p>
+                <h4>Resultados para: ${escapeHTML(folio)}</h4>
+                <p><b>Alumno:</b> ${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)}</p>
                 <hr>
-                <p><b>🔑 Cód. Inscripción:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${hIns}</code></p>
-                <p><b>🎓 Cód. Finalización:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${hFin}</code></p>
+                <p><b>🔑 Cód. Inscripción:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${escapeHTML(hIns)}</code></p>
+                <p><b>🎓 Cód. Finalización:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${escapeHTML(hFin)}</code></p>
                 <p><small>*Si el código final no aparece, el alumno aún no se gradúa o el sistema no ha emitido la constancia.</small></p>
             `;
         }
@@ -693,27 +704,27 @@
 
             document.getElementById('modal-titulo').innerText = tipo === 'validar' ? "Validar Solicitud" : "Expediente del Beneficiario";
             
-            const textoSede = al.lugar ? al.lugar : '<span style="color:#e67e22; font-weight:bold;">⏳ Calculando asignación...</span>';
-            const textoHorario = al.dia ? `${al.dia} - ${al.horario}` : '<span style="color:#e67e22;">⏳ Procesando...</span>';
+            const textoSede = al.lugar ? escapeHTML(al.lugar) : '<span style="color:#e67e22; font-weight:bold;">⏳ Calculando asignación...</span>';
+            const textoHorario = al.dia ? `${escapeHTML(al.dia)} - ${escapeHTML(al.horario)}` : '<span style="color:#e67e22;">⏳ Procesando...</span>';
 
             let contenido = `
                 <div class="data-grid">
-                    <div class="data-item highlight"><label>Folio</label><span>${al.folio}</span></div>
-                    <div class="data-item"><label>Estatus</label><span>${al.estatus || 'PENDIENTE'}</span></div>
-                    <div class="data-item full-width"><label>Nombre Completo</label><span>${al.nombres} ${al.paterno} ${al.materno}</span></div>
+                    <div class="data-item highlight"><label>Folio</label><span>${escapeHTML(al.folio)}</span></div>
+                    <div class="data-item"><label>Estatus</label><span>${escapeHTML(al.estatus || 'PENDIENTE')}</span></div>
+                    <div class="data-item full-width"><label>Nombre Completo</label><span>${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)} ${escapeHTML(al.materno)}</span></div>
                     
-                    <div class="data-item"><label>Correo Electrónico</label><span>${al.correo}</span></div>
-                    <div class="data-item"><label>Teléfono</label><span>${al.telefono}</span></div>
+                    <div class="data-item"><label>Correo Electrónico</label><span>${escapeHTML(al.correo)}</span></div>
+                    <div class="data-item"><label>Teléfono</label><span>${escapeHTML(al.telefono)}</span></div>
                     
-                    <div class="data-item"><label>Canalizado por</label><span>${al.canaliza}</span></div>
-                    <div class="data-item"><label>Expediente / Juzgado</label><span>${al.expediente} (Juzgado ${al.juzgado})</span></div>
+                    <div class="data-item"><label>Canalizado por</label><span>${escapeHTML(al.canaliza)}</span></div>
+                    <div class="data-item"><label>Expediente / Juzgado</label><span>${escapeHTML(al.expediente)} (Juzgado ${escapeHTML(al.juzgado)})</span></div>
 
-                    <div class="data-item full-width"><label>Taller</label><span>${al.taller}</span></div>
+                    <div class="data-item full-width"><label>Taller</label><span>${escapeHTML(al.taller)}</span></div>
                     <div class="data-item"><label>Sede</label><span>${textoSede}</span></div>
                     <div class="data-item"><label>Horario</label><span>${textoHorario}</span></div>
             `;
             if((tipo === 'terminado' || tipo === 'graduado') && al.encuesta_fecha) {
-                contenido += `<div class="data-item full-width highlight">Resultados de Evaluación Respondida: ${al.encuesta_fecha}</div>`;
+                contenido += `<div class="data-item full-width highlight">Resultados de Evaluación Respondida: ${escapeHTML(al.encuesta_fecha)}</div>`;
             }
             contenido += `</div>`;
             document.getElementById('modal-contenido').innerHTML = contenido;
@@ -726,33 +737,33 @@
                         <div style="background: #fff4e6; border-left: 4px solid #e67e22; padding: 10px; margin-bottom: 10px; font-size: 0.85em; color: #d35400;">
                             <b>El sistema maestro está asignando la Sede y Horario en la nube.</b><br>Por favor, cierre esta ventana y espere unos segundos para poder aprobar.
                         </div>
-                        <button class="btn-danger" onclick="procesarValidacion('${al.folio}', 'No')">🚫 RECHAZAR SOLICITUD</button>
+                        <button class="btn-danger" onclick="procesarValidacion('${escapeHTML(al.folio)}', 'No')">🚫 RECHAZAR SOLICITUD</button>
                         <button class="btn-primary" onclick="cerrarModal()">CERRAR Y ESPERAR</button>
                     `;
                 } else {
                     botonesFooter = `
-                        <button class="btn-primary" onclick="procesarValidacion('${al.folio}', 'Sí')">✅ APROBAR</button>
-                        <button class="btn-danger" onclick="procesarValidacion('${al.folio}', 'No')">🚫 RECHAZAR</button>
+                        <button class="btn-primary" onclick="procesarValidacion('${escapeHTML(al.folio)}', 'Sí')">✅ APROBAR</button>
+                        <button class="btn-danger" onclick="procesarValidacion('${escapeHTML(al.folio)}', 'No')">🚫 RECHAZAR</button>
                     `;
                 }
             } else {
                 if (tipo === 'terminado' || tipo === 'graduado') {
                     if (al.encuesta_fecha) {
                         botonesFooter += `
-                            <button class="btn-action" style="background:#8e44ad; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="verRespuestas('${al.folio}')">
+                            <button class="btn-action" style="background:#8e44ad; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="verRespuestas('${escapeHTML(al.folio)}')">
                                 📝 VER RESPUESTAS DE EVALUACIÓN
                             </button>
                         `;
                     }
                     botonesFooter += `
-                        <button class="btn-action" style="background:#27ae60; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="reenviarFinal('${al.folio}')">
+                        <button class="btn-action" style="background:#27ae60; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="reenviarFinal('${escapeHTML(al.folio)}')">
                             🎓 REENVIAR DIPLOMA FINAL
                         </button>
                     `;
                 } 
                 else if (al.validado === 'Sí') {
                     botonesFooter += `
-                        <button class="btn-action" style="background:#f39c12; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="reenviarInscripcion('${al.folio}')">
+                        <button class="btn-action" style="background:#f39c12; color:white; border:none; padding:12px; width:100%; margin-bottom:10px; font-weight:bold;" onclick="reenviarInscripcion('${escapeHTML(al.folio)}')">
                             📄 REENVIAR CONSTANCIA INSCRIPCIÓN
                         </button>
                     `;
@@ -764,35 +775,53 @@
             document.getElementById('modal-detalle').style.display = 'flex';
         }
 
-function verRespuestas(folio) {
+        function verRespuestas(folio) {
             const al = inscritosGlobal.find(a => a.folio === folio);
             if (!al) return;
 
             document.getElementById('modal-titulo').innerText = "Respuestas de Evaluación";
 
-            // Imprimimos el objeto al en consola para depurar si fuera necesario
-            console.log("Datos del alumno:", al);
-
             let contenido = `<div style="padding: 10px; font-size: 0.95em;">
-                <p><b>Folio:</b> ${al.folio}</p>
-                <p><b>Fecha de respuesta:</b> ${al.encuesta_fecha || 'No registrada'}</p>
+                <p><b>Folio:</b> ${escapeHTML(al.folio)}</p>
+                <p><b>Fecha de respuesta:</b> ${escapeHTML(al.encuesta_fecha || al.Fecha_Evaluacion || 'No registrada')}</p>
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
                 
                 <div style="display:grid; grid-template-columns: 1fr; gap:15px;">
-                    ${generarCampo("Duración", al.duracion)}
-                    ${generarCampo("Desempeño", al.desempeno)}
-                    ${generarCampo("Estrategias", al.estrategias)}
-                    ${generarCampo("Contenido", al.contenido)}
-                    ${generarCampo("Participación", al.participacion)}
-                    ${generarCampo("Puntualidad", al.puntualidad)}
-                    ${generarCampo("Aplicación", al.aplicacion)}
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Duración del taller</span>
+                        <strong style="color: #333;">${escapeHTML(al.duracion || al.Duracion || 'Sin respuesta')}</strong>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Desempeño del ponente</span>
+                        <strong style="color: #333;">${escapeHTML(al.desempeno || al.Desempeno || 'Sin respuesta')}</strong>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Estrategias y dinámicas</span>
+                        <strong style="color: #333;">${escapeHTML(al.estrategias || al.Estrategias || 'Sin respuesta')}</strong>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Contenido del taller</span>
+                        <strong style="color: #333;">${escapeHTML(al.contenido || al.Contenido || 'Sin respuesta')}</strong>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Participación e interacción</span>
+                        <strong style="color: #333;">${escapeHTML(al.participacion || al.Participacion || 'Sin respuesta')}</strong>
+                    </div>
+                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Puntualidad</span>
+                        <strong style="color: #333;">${escapeHTML(al.puntualidad || al.Puntualidad || 'Sin respuesta')}</strong>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Aplicación práctica en la vida</span>
+                        <strong style="color: #333;">${escapeHTML(al.aplicacion || al.Aplicacion || 'Sin respuesta')}</strong>
+                    </div>
                     <div style="background: #eef2ff; padding: 12px; border-radius: 6px; border: 1px solid var(--primary);">
                         <span style="display:block; font-size:0.85em; color:var(--primary); margin-bottom:4px; font-weight:bold;">¿Recomendaría el taller?</span>
-                        <strong style="color: #333; font-size: 1.1em;">${al.recomendaria || 'Sin respuesta'}</strong>
+                        <strong style="color: #333; font-size: 1.1em;">${escapeHTML(al.recomendaria || al.Recomendaria || 'Sin respuesta')}</strong>
                     </div>
                     <div style="background: #eef2ff; padding: 12px; border-radius: 6px; border: 1px solid var(--primary);">
                         <span style="display:block; font-size:0.85em; color:var(--primary); margin-bottom:4px; font-weight:bold;">¿Tomaría otro taller?</span>
-                        <strong style="color: #333; font-size: 1.1em;">${al.otro_taller || 'Sin respuesta'}</strong>
+                        <strong style="color: #333; font-size: 1.1em;">${escapeHTML(al.otro_taller || al.Otro_Taller || 'Sin respuesta')}</strong>
                     </div>
                 </div>
             </div>`;
@@ -800,16 +829,8 @@ function verRespuestas(folio) {
             document.getElementById('modal-contenido').innerHTML = contenido;
             
             document.getElementById('modal-footer').innerHTML = `
-                <button class="btn-primary" onclick="abrirExpediente('${folio}', 'terminado')">⬅ VOLVER AL EXPEDIENTE</button>
+                <button class="btn-primary" onclick="abrirExpediente('${escapeHTML(folio)}', 'terminado')">⬅ VOLVER AL EXPEDIENTE</button>
             `;
-        }
-
-        // Función auxiliar para evitar código repetido y manejar nulos
-        function generarCampo(titulo, valor) {
-            return `<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">${titulo}</span>
-                        <strong style="color: #333;">${valor || 'Sin respuesta'}</strong>
-                    </div>`;
         }
 
         async function procesarValidacion(folio, decision) {
@@ -877,12 +898,12 @@ function verRespuestas(folio) {
             const talleres = await res.json();
             const select = document.getElementById('asis-taller-filtro');
             if(usuarioLogueado.rol === 'Administrador') {
-                select.innerHTML = '<option value="">-- Seleccionar Taller --</option>' + talleres.map(t => `<option value="${t.nombre}">${t.nombre}</option>`).join('');
+                select.innerHTML = '<option value="">-- Seleccionar Taller --</option>' + talleres.map(t => `<option value="${escapeHTML(t.nombre)}">${escapeHTML(t.nombre)}</option>`).join('');
                 select.disabled = false;
             } else {
                 const miT = talleres.find(t => t.id == usuarioLogueado.taller_id);
                 const n = miT ? miT.nombre : "Sin taller";
-                select.innerHTML = `<option value="${n}">${n}</option>`; select.disabled = true;
+                select.innerHTML = `<option value="${escapeHTML(n)}">${escapeHTML(n)}</option>`; select.disabled = true;
                 cargarAlumnosAsistencia();
             }
         }
@@ -898,9 +919,9 @@ function verRespuestas(folio) {
             
             tbody.innerHTML = activos.map(al => `
                 <tr>
-                    <td><b>${al.nombres} ${al.paterno} ${al.materno}</b><br><small>${al.folio}</small></td>
-                    <td style="text-align:center;">${al.asistencias}/8</td>
-                    <td style="text-align:center;"><input type="checkbox" class="check-asis" data-folio="${al.folio}"></td>
+                    <td><b>${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)} ${escapeHTML(al.materno)}</b><br><small>${escapeHTML(al.folio)}</small></td>
+                    <td style="text-align:center;">${escapeHTML(al.asistencias)}/8</td>
+                    <td style="text-align:center;"><input type="checkbox" class="check-asis" data-folio="${escapeHTML(al.folio)}"></td>
                 </tr>
             `).join('') || '<tr><td colspan="3">Sin alumnos</td></tr>';
             
@@ -924,7 +945,7 @@ function verRespuestas(folio) {
             const res = await fetch(`${URL_APPS_SCRIPT}?accion=listar_talleres&t=${new Date().getTime()}`);
             const data = await res.json();
             
-            document.getElementById('body-catalogos').innerHTML = data.map((item, idx) => `<tr><td><b>${item.id}</b></td><td>${item.nombre}</td><td>${item.impartido_por || '-'}</td><td><span class="status-pill ${item.estatus === 'ACTIVO' ? 'val-si' : 'val-no'}">${item.estatus}</span></td><td><button class="btn-action" onclick="alternarTaller('${item.estatus}', ${idx + 2})">Alternar</button></td></tr>`).join('');
+            document.getElementById('body-catalogos').innerHTML = data.map((item, idx) => `<tr><td><b>${escapeHTML(item.id)}</b></td><td>${escapeHTML(item.nombre)}</td><td>${escapeHTML(item.impartido_por || '-')}</td><td><span class="status-pill ${item.estatus === 'ACTIVO' ? 'val-si' : 'val-no'}">${escapeHTML(item.estatus)}</span></td><td><button class="btn-action" onclick="alternarTaller('${escapeHTML(item.estatus)}', ${idx + 2})">Alternar</button></td></tr>`).join('');
 
             const talleresActivos = data.filter(t => t.estatus === 'ACTIVO');
             const institucionesUnicas = new Set();
