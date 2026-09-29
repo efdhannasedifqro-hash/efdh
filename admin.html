@@ -264,7 +264,7 @@
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
                 
                 <div style="font-size: 0.95em; color: #666; text-align: left; padding-left: 10px;">
-                    <p><b>Versión:</b> 1.6.2 (Hardened - Anti-XSS)</p>
+                    <p><b>Versión:</b> 1.6 (Build Normativo - 2026)</p>
                     <p><b>Arquitectura:</b> Ecosistema Serverless y PWA</p>
                     <p><b>Cumplimiento Normativo:</b> Arts. 17, 32, 34 y 50 (SSTI-SF)</p>
                 </div>
@@ -280,12 +280,7 @@
     </div>
 
     <script>
-        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxIqnneU9iTy44ipLbkumNkzDYrsS_kg4IQavAw9TKBSOPY0PjGiy19HSvRLDDBVKVfAA/exec';
-        let inscritosGlobal = [];
-        let usuarioLogueado = {};
-        let miGrafica = null;
-
-        // --- FUNCIÓN GUARDIÁN ANTI-XSS ---
+        // Función quirúrgica para neutralizar inyección de código XSS en el DOM
         function escapeHTML(str) {
             if (str === null || str === undefined) return '';
             return String(str)
@@ -295,6 +290,12 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
+
+        /*const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxIqnneU9iTy44ipLbkumNkzDYrsS_kg4IQavAw9TKBSOPY0PjGiy19HSvRLDDBVKVfAA/exec';*/
+        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxEURBRvXXXhyuOQV0qGdz3pJYCPvofX5QhIfulOchDiFNtBc58CngL93bibF8hpxKq7g/exec';
+        let inscritosGlobal = [];
+        let usuarioLogueado = {};
+        let miGrafica = null;
 
         function decodificarJWT(token) {
             const base64Url = token.split('.')[1];
@@ -327,8 +328,8 @@
                     usuarioLogueado = user;
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('admin-panel').style.display = 'flex';
-                    document.getElementById('user-display').innerText = user.nombre;
-                    document.getElementById('role-display').innerText = user.rol;
+                    document.getElementById('user-display').innerText = escapeHTML(user.nombre);
+                    document.getElementById('role-display').innerText = escapeHTML(user.rol);
                     
                     if(user.rol === 'Tallerista') { 
                         document.getElementById('menu-admin-only').style.display = 'none'; 
@@ -338,7 +339,7 @@
                         setInterval(cargarDatos, 30000);
                     }
                 } else { 
-                    alert("Tu correo validado (" + emailVerificado + ") no está dado de alta en la base de datos de usuarios del sistema.");
+                    alert("Tu correo validado (" + escapeHTML(emailVerificado) + ") no está dado de alta en la base de datos de usuarios del sistema.");
                     document.getElementById('login-msg').innerText = "";
                 }
             } catch (e) { 
@@ -367,14 +368,14 @@
 
         function procesarFechaFuerte(fechaStr) {
             if (!fechaStr) return null;
-            const soloFecha = fechaStr.split(' '); 
+            const soloFecha = fechaStr.split(' ')[0]; 
 
             if (soloFecha.includes('/') || soloFecha.includes('-')) {
                 const separador = soloFecha.includes('/') ? '/' : '-';
                 const partes = soloFecha.split(separador);
                 
                 if (partes.length === 3) {
-                    let dia = partes;
+                    let dia = partes[0];
                     let mes = partes[1];
                     let anio = partes[2];
                     if (anio.length === 2) anio = "20" + anio;
@@ -429,9 +430,9 @@
                 setPersonasActivas = inscritosGlobal; 
 
             } else {
-                labelMes.innerText = document.getElementById('filtro-mes-stats').selectedOptions.text;
+                labelMes.innerText = document.getElementById('filtro-mes-stats').selectedOptions[0].text;
                 badgeMes.style.display = "block";
-                tituloTabla.innerText = `(Actividad en: ${document.getElementById('filtro-mes-stats').selectedOptions.text})`;
+                tituloTabla.innerText = `(Actividad en: ${document.getElementById('filtro-mes-stats').selectedOptions[0].text})`;
 
                 inscritosGlobal.forEach(al => {
                     const mesReg = procesarFechaFuerte(al.fecha_registro);
@@ -569,7 +570,7 @@
 
             document.getElementById('body-terminados').innerHTML = terminados.map(al => {
                 const esGraduado = (al.estatus === "Evaluación Recibida");
-                return `<tr><td>${escapeHTML(al.folio)}</td><td>${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)}</td><td>${escapeHTML(al.taller)}</td><td><span class="status-pill ${esGraduado ? 'val-si' : 'val-no'}">${esGraduado ? "✅ Finalizado" : "⏳ Pendiente Encuesta"}</span></td><td><button class="btn-action" onclick="abrirExpediente('${escapeHTML(al.folio)}', 'terminado')">Ver Expediente</button></td></tr>`
+                return `<tr><td>${escapeHTML(al.folio)}</td><td>${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)}</td><td>${escapeHTML(al.taller)}</td><td><span class="status-pill ${esGraduado ? 'pill-active' : 'val-no'}">${esGraduado ? "✅ Finalizado" : "⏳ Pendiente Encuesta"}</span></td><td><button class="btn-action" onclick="abrirExpediente('${escapeHTML(al.folio)}', 'terminado')">Ver Expediente</button></td></tr>`
             }).join('') || '<tr><td colspan="5" style="text-align:center">Sin terminados</td></tr>';
 
             document.getElementById('body-rechazados').innerHTML = rechazados.map(al => `
@@ -640,10 +641,10 @@
                 } else {
                     estadoBadge = "⏳ ACTIVO (EN CURSO)";
                     colorBg = "#eef2ff"; borderColor = "var(--primary)";
-                    let fechas = al.fechas_asis && al.fechas_asis.length > 0 ? al.fechas_asis.map(f => escapeHTML(f)).join(", ") : "Aún no tiene asistencias";
+                    let fechas = al.fechas_asis && al.fechas_asis.length > 0 ? al.fechas_asis.join(", ") : "Aún no tiene asistencias";
                     infoExtra = `
                         <p><b>Asistencias acumuladas:</b> ${escapeHTML(al.asistencias || 0)} / 8</p>
-                        <p><b>Fechas en las que asistió:</b> ${fechas}</p>
+                        <p><b>Fechas en las que asistió:</b> ${escapeHTML(fechas)}</p>
                     `;
                 }
 
@@ -685,15 +686,15 @@
             resBox.style.display = 'block';
             if(!al) { resBox.innerHTML = "<p style='color:red;'>⚠️ El folio no existe en la base de datos.</p>"; return; }
             
-            const hIns = al.folio_val_ins || "Pendiente";
-            const hFin = al.folio_val_fin || "No generado aún";
+            const hIns = escapeHTML(al.folio_val_ins || "Pendiente");
+            const hFin = escapeHTML(al.folio_val_fin || "No generado aún");
             
             resBox.innerHTML = `
                 <h4>Resultados para: ${escapeHTML(folio)}</h4>
                 <p><b>Alumno:</b> ${escapeHTML(al.nombres)} ${escapeHTML(al.paterno)}</p>
                 <hr>
-                <p><b>🔑 Cód. Inscripción:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${escapeHTML(hIns)}</code></p>
-                <p><b>🎓 Cód. Finalización:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${escapeHTML(hFin)}</code></p>
+                <p><b>🔑 Cód. Inscripción:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${hIns}</code></p>
+                <p><b>🎓 Cód. Finalización:</b><br><code style='background:#eee; padding:2px 5px; font-size:1.1em;'>${hFin}</code></p>
                 <p><small>*Si el código final no aparece, el alumno aún no se gradúa o el sistema no ha emitido la constancia.</small></p>
             `;
         }
@@ -775,53 +776,35 @@
             document.getElementById('modal-detalle').style.display = 'flex';
         }
 
-        function verRespuestas(folio) {
+function verRespuestas(folio) {
             const al = inscritosGlobal.find(a => a.folio === folio);
             if (!al) return;
 
             document.getElementById('modal-titulo').innerText = "Respuestas de Evaluación";
 
+            // Imprimimos el objeto al en consola para depurar si fuera necesario
+            console.log("Datos del alumno:", al);
+
             let contenido = `<div style="padding: 10px; font-size: 0.95em;">
                 <p><b>Folio:</b> ${escapeHTML(al.folio)}</p>
-                <p><b>Fecha de respuesta:</b> ${escapeHTML(al.encuesta_fecha || al.Fecha_Evaluacion || 'No registrada')}</p>
+                <p><b>Fecha de respuesta:</b> ${escapeHTML(al.encuesta_fecha || 'No registrada')}</p>
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
                 
                 <div style="display:grid; grid-template-columns: 1fr; gap:15px;">
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Duración del taller</span>
-                        <strong style="color: #333;">${escapeHTML(al.duracion || al.Duracion || 'Sin respuesta')}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Desempeño del ponente</span>
-                        <strong style="color: #333;">${escapeHTML(al.desempeno || al.Desempeno || 'Sin respuesta')}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Estrategias y dinámicas</span>
-                        <strong style="color: #333;">${escapeHTML(al.estrategias || al.Estrategias || 'Sin respuesta')}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Contenido del taller</span>
-                        <strong style="color: #333;">${escapeHTML(al.contenido || al.Contenido || 'Sin respuesta')}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Participación e interacción</span>
-                        <strong style="color: #333;">${escapeHTML(al.participacion || al.Participacion || 'Sin respuesta')}</strong>
-                    </div>
-                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Puntualidad</span>
-                        <strong style="color: #333;">${escapeHTML(al.puntualidad || al.Puntualidad || 'Sin respuesta')}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
-                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">Aplicación práctica en la vida</span>
-                        <strong style="color: #333;">${escapeHTML(al.aplicacion || al.Aplicacion || 'Sin respuesta')}</strong>
-                    </div>
+                    ${generarCampo("Duración", al.duracion)}
+                    ${generarCampo("Desempeño", al.desempeno)}
+                    ${generarCampo("Estrategias", al.estrategias)}
+                    ${generarCampo("Contenido", al.contenido)}
+                    ${generarCampo("Participación", al.participacion)}
+                    ${generarCampo("Puntualidad", al.puntualidad)}
+                    ${generarCampo("Aplicación", al.aplicacion)}
                     <div style="background: #eef2ff; padding: 12px; border-radius: 6px; border: 1px solid var(--primary);">
                         <span style="display:block; font-size:0.85em; color:var(--primary); margin-bottom:4px; font-weight:bold;">¿Recomendaría el taller?</span>
-                        <strong style="color: #333; font-size: 1.1em;">${escapeHTML(al.recomendaria || al.Recomendaria || 'Sin respuesta')}</strong>
+                        <strong style="color: #333; font-size: 1.1em;">${escapeHTML(al.recomendaria || 'Sin respuesta')}</strong>
                     </div>
                     <div style="background: #eef2ff; padding: 12px; border-radius: 6px; border: 1px solid var(--primary);">
                         <span style="display:block; font-size:0.85em; color:var(--primary); margin-bottom:4px; font-weight:bold;">¿Tomaría otro taller?</span>
-                        <strong style="color: #333; font-size: 1.1em;">${escapeHTML(al.otro_taller || al.Otro_Taller || 'Sin respuesta')}</strong>
+                        <strong style="color: #333; font-size: 1.1em;">${escapeHTML(al.otro_taller || 'Sin respuesta')}</strong>
                     </div>
                 </div>
             </div>`;
@@ -831,6 +814,14 @@
             document.getElementById('modal-footer').innerHTML = `
                 <button class="btn-primary" onclick="abrirExpediente('${escapeHTML(folio)}', 'terminado')">⬅ VOLVER AL EXPEDIENTE</button>
             `;
+        }
+
+        // Función auxiliar para evitar código repetido y manejar nulos
+        function generarCampo(titulo, valor) {
+            return `<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid var(--purple);">
+                        <span style="display:block; font-size:0.85em; color:#666; margin-bottom:4px;">${escapeHTML(titulo)}</span>
+                        <strong style="color: #333;">${escapeHTML(valor || 'Sin respuesta')}</strong>
+                    </div>`;
         }
 
         async function procesarValidacion(folio, decision) {
