@@ -192,8 +192,19 @@
     </div>
 
     <script>
+        // Función quirúrgica para neutralizar inyección de código XSS en el DOM
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         // 🚀 URL DIRECTA A GOOGLE APPS SCRIPT (Reemplaza a Make)
-       //a cuenta gmail 
+        //a cuenta gmail 
         //const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxIqnneU9iTy44ipLbkumNkzDYrsS_kg4IQavAw9TKBSOPY0PjGiy19HSvRLDDBVKVfAA/exec'; 
         //cuenta geq
         const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxEURBRvXXXhyuOQV0qGdz3pJYCPvofX5QhIfulOchDiFNtBc58CngL93bibF8hpxKq7g/exec'; 
@@ -220,15 +231,15 @@
             const contenedor = document.getElementById('listaTalleres');
             if (contenedor.innerHTML.trim() === "") {
                 INFO_TALLERES.forEach((t, index) => {
-                    let temasHtml = t.temas.map(tema => `<li>${tema}</li>`).join('');
+                    let temasHtml = t.temas.map(tema => `<li>${escapeHTML(tema)}</li>`).join('');
                     let html = `
                         <div class="accordion-item">
                             <div class="accordion-header" onclick="toggleAcordeon(${index})">
-                                <span>${t.nombre}</span><span>▼</span>
+                                <span>${escapeHTML(t.nombre)}</span><span>▼</span>
                             </div>
                             <div class="accordion-content" id="content-${index}">
-                                <p><strong>Objetivo:</strong> ${t.obj}</p>
-                                <p><span class="tag-sede">📍 ${t.sede}</span></p>
+                                <p><strong>Objetivo:</strong> ${escapeHTML(t.obj)}</p>
+                                <p><span class="tag-sede">📍 ${escapeHTML(t.sede)}</span></p>
                                 <p><strong>Temáticas principales:</strong></p>
                                 <ul class="list-temas">${temasHtml}</ul>
                             </div>
@@ -272,11 +283,11 @@ async function cargarTalleres() {
                 
                 select.innerHTML = '<option value="">Seleccione el taller...</option>';
                 
-                // Quitamos duplicados y pintamos las opciones 
+                // Quitamos duplicados y pintamos las opciones (blindado con escapeHTML)
                 [...new Set(talleresActivos)].forEach(nombre => {
                     let opt = document.createElement('option');
-                    opt.value = nombre; 
-                    opt.textContent = nombre;
+                    opt.value = escapeHTML(nombre); 
+                    opt.textContent = escapeHTML(nombre);
                     select.appendChild(opt);
                 });
             } catch (e) { console.error(e); }
